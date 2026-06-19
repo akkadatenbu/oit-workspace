@@ -102,7 +102,6 @@ const ProjectView = () => {
   const [targetFolderId, setTargetFolderId] = useState<number | 'none'>('none');
   const [isMovingProject, setIsMovingProject] = useState(false);
 
-  const [allUsers, setAllUsers] = useState<any[]>([]);
 
   const fetchProject = async () => {
     setLoading(true);
@@ -122,19 +121,10 @@ const ProjectView = () => {
     }
   };
 
-  const fetchUsers = async () => {
-    try {
-      const { data } = await apiClient.get('/users');
-      setAllUsers(data);
-    } catch (err) {
-      console.error('Failed to load users');
-    }
-  };
 
   useEffect(() => {
     if (id) {
       fetchProject();
-      fetchUsers();
     }
   }, [id]);
 
