@@ -106,7 +106,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
     setIsTeamModalOpen(true);
     setTeamSearch('');
     try {
-      const { data } = await apiClient.get('/users');
+      const { data } = await apiClient.get('/users?memberOnly=true');
       setAllUsers(data);
     } catch { /* silent */ }
   };
