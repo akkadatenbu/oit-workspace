@@ -30,6 +30,7 @@ import userRoutes from './routes/user.routes';
 import notificationRoutes from './routes/notification.routes';
 import searchRoutes from './routes/search.routes';
 import invitationRoutes from './routes/invitation.routes';
+import adminRoutes from './routes/admin.routes';
 
 const app = express();
 const port = process.env.PORT || 5525;
@@ -87,6 +88,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api', invitationRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'OIT WorkSpace API is running' });

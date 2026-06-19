@@ -1,0 +1,119 @@
+import { Router } from 'express';
+import { prisma } from '../index';
+import { isAuthenticated } from './space.routes';
+
+const router = Router();
+
+// Middleware: เฉพาะ Admin เท่านั้น
+const isAdmin = (req: any, res: any, next: any) => {
+  if (!req.isAuthenticated()) return res.status(401).json({ error: 'Not authenticated' });
+  if ((req.user as any).systemRole !== 'Admin') return res.status(403).json({ error: 'Admin access required' });
+  next();
+};
+
+// ── System Stats ─────────────────────────────────────────────
+router.get('/stats', isAuthenticated, isAdmin, async (req, res) => {
+  try {
+    const [totalUsers, totalSpaces, totalProjects, totalTasks, completedTasks, pendingInvitations] =
+      await Promise.all([
+        prisma.user.count(),
+        prisma.space.count(),
+        prisma.project.count(),
+        prisma.task.count({ where: { parentTaskId: null } }),
+        prisma.task.count({ where: { parentTaskId: null, status: 'Done' } }),
+        prisma.projectInvitation.count({ where: { status: 'Pending' } }),
+      ]);
+
+    const recentUsers = await prisma.user.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+      select: { id: true, displayName: true, avatarUrl: true, email: true, systemRole: true, createdAt: true }
+    });
+
+    res.json({
+      totalUsers, totalSpaces, totalProjects, totalTasks, completedTasks, pendingInvitations,
+      completionRate: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
+      recentUsers
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
+// ── User Management ──────────────────────────────────────────
+router.get('/users', isAuthenticated, isAdmin, async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true, email: true, displayName: true, avatarUrl: true,
+        systemRole: true, createdAt: true,
+        _count: {
+          select: {
+            createdTasks: true,
+            projects: true,
+            ownedSpaces: true
+          }
+        }
+      }
+    });
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
+// เปลี่ยน role
+router.patch('/users/:id/role', isAuthenticated, isAdmin, async (req, res) => {
+  const { role } = req.body;
+  if (!['Admin', 'Member', 'Guest'].includes(role)) {
+    return res.status(400).json({ error: 'Invalid role' });
+  }
+  // ป้องกันตัวเองเปลี่ยน role ตัวเอง
+  if (Number(req.params.id) === (req.user as any).id) {
+    return res.status(400).json({ error: 'Cannot change your own role' });
+  }
+  try {
+    const user = await prisma.user.update({
+      where: { id: Number(req.params.id) },
+      data: { systemRole: role },
+      select: { id: true, email: true, displayName: true, systemRole: true }
+    });
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update role' });
+  }
+});
+
+// ── Workspace Overview ───────────────────────────────────────
+router.get('/spaces', isAuthenticated, isAdmin, async (req, res) => {
+  try {
+    const spaces = await prisma.space.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        owner: { select: { id: true, displayName: true, email: true, avatarUrl: true } },
+        _count: { select: { projects: true } }
+      }
+    });
+    res.json(spaces);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch spaces' });
+  }
+});
+
+// โอนความเป็นเจ้าของ space
+router.patch('/spaces/:id/owner', isAuthenticated, isAdmin, async (req, res) => {
+  const { ownerId } = req.body;
+  try {
+    const space = await prisma.space.update({
+      where: { id: Number(req.params.id) },
+      data: { ownerId: Number(ownerId) },
+      include: { owner: { select: { displayName: true, email: true } } }
+    });
+    res.json(space);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to transfer ownership' });
+  }
+});
+
+export default router;

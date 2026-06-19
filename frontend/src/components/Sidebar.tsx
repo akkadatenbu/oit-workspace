@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, CheckSquare, LogOut, ChevronLeft, ChevronRight, Plus, Layers, Folder, Pencil, Trash2, Building2 } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, LogOut, ChevronLeft, ChevronRight, Plus, Layers, Folder, Pencil, Trash2, Building2, Crown } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { apiClient } from '../api/client';
@@ -173,9 +173,12 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
     }
   };
 
+  const { user } = useAuth();
+
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
     { icon: CheckSquare, label: 'My Tasks', path: '/tasks' },
+    ...(user?.systemRole === 'Admin' ? [{ icon: Crown, label: 'Admin Panel', path: '/admin' }] : []),
   ];
 
   return (
