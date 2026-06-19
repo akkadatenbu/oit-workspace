@@ -153,42 +153,24 @@ const Members = () => {
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 p-4 md:p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6 shrink-0">
-        <div>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-3">
-            <Users className="w-8 h-8 text-blue-500" /> Members
-          </h2>
-          <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">จัดการสมาชิกทีมของแต่ละ Workspace</p>
-        </div>
-
-        {/* Space selector */}
-        {spaces.length > 1 && (
-          <div className="relative">
-            <select
-              value={selectedSpaceId ?? ''}
-              onChange={e => setSelectedSpaceId(Number(e.target.value))}
-              className="pl-4 pr-8 py-2 text-sm bg-white dark:bg-[#121212] border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 font-normal appearance-none cursor-pointer"
-            >
-              {spaces.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
-            <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-          </div>
-        )}
+      <div className="mb-6 shrink-0">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-3">
+          <Users className="w-8 h-8 text-blue-500" /> Members
+        </h2>
+        <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">จัดการสมาชิกทีมของแต่ละ Workspace</p>
       </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar space-y-6">
         {/* ── Current Members ── */}
         <div className="bg-white dark:bg-[#121212] border border-gray-200 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10 flex items-center justify-between">
-            <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               สมาชิกทีม
-              <span className="ml-2 text-sm font-normal text-gray-500">
+              <span className="text-sm font-normal text-gray-500">
                 ({selectedSpace?.members?.length ?? 0} คน)
               </span>
             </h3>
-            {spaces.length === 1 && (
-              <span className="text-sm font-medium text-blue-600 dark:text-blue-400">{selectedSpace?.name}</span>
-            )}
+            <span className="text-sm font-medium text-blue-600 dark:text-blue-400">{selectedSpace?.name}</span>
           </div>
 
           {(!selectedSpace?.members || selectedSpace.members.length === 0) ? (
@@ -293,28 +275,46 @@ const Members = () => {
             <Mail className="w-4 h-4 text-blue-500" /> เชิญสมาชิกใหม่
           </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            ระบบจะส่งลิงก์ยืนยันไปที่ email — เมื่อยืนยันแล้วจะเข้าถึงทุก project ใน workspace นี้ได้อัตโนมัติ
+            ระบบจะส่งลิงก์ยืนยันไปที่ email — เมื่อยืนยันแล้วจะเข้าถึงทุก project ใน workspace ที่เลือกได้อัตโนมัติ
           </p>
-          <form onSubmit={handleSendInvite} className="flex flex-col sm:flex-row gap-3">
+          <form onSubmit={handleSendInvite} className="flex flex-wrap gap-2 items-center">
+            {/* Email */}
             <input
               type="email"
               value={inviteEmail}
               onChange={e => setInviteEmail(e.target.value)}
               placeholder="email@northbkk.ac.th"
-              className="flex-1 px-4 py-2.5 text-sm bg-gray-50 dark:bg-[#0a0a0a] border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 font-normal"
+              className="flex-1 min-w-[220px] px-4 py-2.5 text-sm bg-gray-50 dark:bg-[#0a0a0a] border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 font-normal"
               required
             />
-            <select
-              value={inviteRole}
-              onChange={e => setInviteRole(e.target.value as 'Member' | 'Guest')}
-              className="w-full sm:w-48 px-4 py-2.5 text-sm bg-gray-50 dark:bg-[#0a0a0a] border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 font-normal appearance-none"
-            >
-              <option value="Member">Member — แก้ไขได้</option>
-              <option value="Guest">Guest — อ่านได้อย่างเดียว</option>
-            </select>
+            {/* Workspace */}
+            <div className="relative shrink-0">
+              <select
+                value={selectedSpaceId ?? ''}
+                onChange={e => setSelectedSpaceId(Number(e.target.value))}
+                className="pl-3 pr-8 py-2.5 text-sm bg-gray-50 dark:bg-[#0a0a0a] border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 font-normal appearance-none cursor-pointer"
+                required
+              >
+                {spaces.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+              <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            </div>
+            {/* Role */}
+            <div className="relative shrink-0">
+              <select
+                value={inviteRole}
+                onChange={e => setInviteRole(e.target.value as 'Member' | 'Guest')}
+                className="pl-3 pr-8 py-2.5 text-sm bg-gray-50 dark:bg-[#0a0a0a] border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 font-normal appearance-none cursor-pointer"
+              >
+                <option value="Member">Member — แก้ไขได้</option>
+                <option value="Guest">Guest — อ่านได้อย่างเดียว</option>
+              </select>
+              <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            </div>
+            {/* Submit */}
             <button
               type="submit"
-              disabled={isInviting || !inviteEmail.trim()}
+              disabled={isInviting || !inviteEmail.trim() || !selectedSpaceId}
               className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-50 shrink-0"
             >
               {isInviting ? 'กำลังส่ง...' : 'ส่งคำเชิญ'}
