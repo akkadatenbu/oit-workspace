@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, MessageSquare, LayoutGrid, List, AlignLeft, CheckSquare, Link as LinkIcon, Paperclip, Download, Calendar, Users, X, FolderInput, Pencil, Trash2, ChevronUp, ChevronDown, ChevronsUpDown, Send, Clock, Timer } from 'lucide-react';
+import { Plus, MessageSquare, LayoutGrid, List, AlignLeft, CheckSquare, Link as LinkIcon, Paperclip, Download, Calendar, Users, X, FolderInput, Pencil, Trash2, ChevronUp, ChevronDown, ChevronsUpDown, Send, Clock, Timer, UserPlus, Shield, Crown } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
@@ -87,6 +87,12 @@ const ProjectView = () => {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Members Modal State
+  const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
+  const [newMemberUserId, setNewMemberUserId] = useState('');
+  const [newMemberRole, setNewMemberRole] = useState<'Member' | 'Guest'>('Member');
+  const [isAddingMember, setIsAddingMember] = useState(false);
+
   // Move Project Modal State
   const [isMoveProjectModalOpen, setIsMoveProjectModalOpen] = useState(false);
   const [availableFolders, setAvailableFolders] = useState<any[]>([]);
@@ -140,6 +146,39 @@ const ProjectView = () => {
       setSearchParams({}, { replace: true }); // เคลียร์ param ออกจาก URL
     }
   }, [tasks, searchParams]);
+
+  const handleAddMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMemberUserId) return;
+    try {
+      setIsAddingMember(true);
+      await apiClient.post(`/projects/${id}/members`, { userId: newMemberUserId, role: newMemberRole });
+      await fetchProject();
+      setNewMemberUserId('');
+    } catch (err) {
+      Swal.fire('Error', 'Failed to add member', 'error');
+    } finally {
+      setIsAddingMember(false);
+    }
+  };
+
+  const handleRemoveMember = async (userId: number, displayName: string) => {
+    const result = await Swal.fire({
+      title: `Remove "${displayName}"?`,
+      text: 'They will no longer have access to this project.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      confirmButtonText: 'Remove'
+    });
+    if (!result.isConfirmed) return;
+    try {
+      await apiClient.delete(`/projects/${id}/members/${userId}`);
+      await fetchProject();
+    } catch (err) {
+      Swal.fire('Error', 'Failed to remove member', 'error');
+    }
+  };
 
   const handleOpenMoveProjectModal = async () => {
     setIsMoveProjectModalOpen(true);
@@ -437,7 +476,27 @@ const ProjectView = () => {
           </div>
           <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm max-w-2xl">{project?.description || 'No description provided.'}</p>
         </div>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3">
+          {/* Members avatars + manage button */}
+          <button
+            onClick={() => setIsMembersModalOpen(true)}
+            className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-[#121212] border border-gray-200 dark:border-white/10 rounded-xl hover:border-blue-400 transition-colors text-sm text-gray-600 dark:text-gray-400"
+            title="Manage project members"
+          >
+            <div className="flex -space-x-2">
+              {project?.members?.slice(0, 4).map((m: any) => (
+                <div key={m.userId} className="w-6 h-6 rounded-full border-2 border-white dark:border-[#121212] overflow-hidden bg-blue-100 flex items-center justify-center shrink-0" title={m.user?.displayName}>
+                  {m.user?.avatarUrl
+                    ? <img src={m.user.avatarUrl} alt="" className="w-full h-full object-cover" />
+                    : <span className="text-[9px] font-bold text-blue-600">{m.user?.displayName?.charAt(0)}</span>
+                  }
+                </div>
+              ))}
+            </div>
+            <UserPlus className="w-4 h-4" />
+            <span className="text-xs font-medium">{project?.members?.length ?? 0}</span>
+          </button>
+
           <div className="bg-white dark:bg-[#121212] rounded-lg p-1 border border-gray-200 dark:border-white/5 flex shadow-sm">
              <button onClick={() => setViewMode('board')} className={`p-1.5 rounded-md transition-colors ${viewMode === 'board' ? 'bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500'}`}><LayoutGrid className="w-5 h-5" /></button>
              <button onClick={() => setViewMode('list')} className={`p-1.5 rounded-md transition-colors ${viewMode === 'list' ? 'bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500'}`}><List className="w-5 h-5" /></button>
@@ -1366,6 +1425,84 @@ const ProjectView = () => {
 
           </div>
         )}
+      </Modal>
+
+      {/* Members Modal */}
+      <Modal isOpen={isMembersModalOpen} onClose={() => setIsMembersModalOpen(false)} title="Project Members" maxWidth="max-w-lg">
+        <div className="space-y-4">
+          {/* Current members */}
+          <div className="space-y-2">
+            {project?.members?.map((m: any) => (
+              <div key={m.userId} className="flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-white/5 rounded-xl">
+                <div className="w-9 h-9 rounded-full overflow-hidden bg-blue-100 flex items-center justify-center shrink-0">
+                  {m.user?.avatarUrl
+                    ? <img src={m.user.avatarUrl} alt="" className="w-full h-full object-cover" />
+                    : <span className="text-sm font-bold text-blue-600">{m.user?.displayName?.charAt(0)}</span>
+                  }
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{m.user?.displayName}</p>
+                  <p className="text-xs text-gray-500 truncate">{m.user?.email}</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  {m.role === 'Owner'
+                    ? <span className="flex items-center gap-1 text-[10px] font-bold text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-500/10 px-2 py-0.5 rounded-full"><Crown className="w-3 h-3" /> Owner</span>
+                    : m.role === 'Member'
+                      ? <span className="flex items-center gap-1 text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-2 py-0.5 rounded-full"><Shield className="w-3 h-3" /> Member</span>
+                      : <span className="text-[10px] font-bold text-gray-500 bg-gray-100 dark:bg-white/10 px-2 py-0.5 rounded-full">Guest</span>
+                  }
+                  {m.role !== 'Owner' && (
+                    <button
+                      onClick={() => handleRemoveMember(m.userId, m.user?.displayName)}
+                      className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors"
+                      title="Remove member"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Add member */}
+          <div className="border-t border-gray-200 dark:border-white/10 pt-4">
+            <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+              <UserPlus className="w-4 h-4 text-blue-500" /> Invite member
+            </p>
+            <form onSubmit={handleAddMember} className="flex gap-2">
+              <select
+                value={newMemberUserId}
+                onChange={e => setNewMemberUserId(e.target.value)}
+                className="flex-1 px-3 py-2 text-sm bg-gray-50 dark:bg-[#121212] border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 font-normal appearance-none"
+                required
+              >
+                <option value="">Select user...</option>
+                {allUsers
+                  .filter(u => !project?.members?.some((m: any) => m.userId === u.id))
+                  .map((u: any) => (
+                    <option key={u.id} value={u.id}>{u.displayName} ({u.email})</option>
+                  ))
+                }
+              </select>
+              <select
+                value={newMemberRole}
+                onChange={e => setNewMemberRole(e.target.value as 'Member' | 'Guest')}
+                className="w-28 px-3 py-2 text-sm bg-gray-50 dark:bg-[#121212] border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 font-normal appearance-none"
+              >
+                <option value="Member">Member</option>
+                <option value="Guest">Guest</option>
+              </select>
+              <button
+                type="submit"
+                disabled={isAddingMember || !newMemberUserId}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-50 shrink-0"
+              >
+                {isAddingMember ? '...' : 'Add'}
+              </button>
+            </form>
+          </div>
+        </div>
       </Modal>
 
       {/* Move Project Modal */}

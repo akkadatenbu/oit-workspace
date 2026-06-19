@@ -57,6 +57,7 @@ model User {
   systemRole    Role              @default(Member)
   createdAt     DateTime          @default(now())
 
+  ownedSpaces   Space[]           @relation("SpaceOwner")
   projects      ProjectMember[]
   createdTasks  Task[]            @relation("TaskCreator")
   assignedTasks TaskAssignee[]
@@ -72,8 +73,10 @@ model Space {
   id          Int       @id @default(autoincrement())
   name        String
   description String?   @db.Text
+  ownerId     Int?
   createdAt   DateTime  @default(now())
-  
+
+  owner       User?     @relation("SpaceOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   folders     Folder[]
   projects    Project[]
 
