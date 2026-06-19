@@ -111,25 +111,6 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
     } catch { /* silent */ }
   };
 
-  const handleAddTeamMember = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const userId = (e.currentTarget as HTMLFormElement).dataset.userid;
-    if (!userId || !teamModalSpace) return;
-    try {
-      setIsAddingTeamMember(true);
-      await apiClient.post(`/spaces/${teamModalSpace.id}/members`, { userId, role: 'Member' });
-      await fetchSpaces();
-      // อัปเดต teamModalSpace ด้วย
-      const { data } = await apiClient.get('/spaces');
-      const updated = data.find((s: any) => s.id === teamModalSpace.id);
-      if (updated) setTeamModalSpace(updated);
-    } catch (err: any) {
-      Swal.fire('Error', err.response?.data?.error || 'Failed to add member', 'error');
-    } finally {
-      setIsAddingTeamMember(false);
-    }
-  };
-
   const handleRemoveTeamMember = async (spaceId: number, userId: number, name: string) => {
     const result = await Swal.fire({
       title: `ลบ "${name}" ออกจากทีม?`,
