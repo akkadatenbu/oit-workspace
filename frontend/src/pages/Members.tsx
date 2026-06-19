@@ -153,7 +153,7 @@ const Members = () => {
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 p-4 md:p-6">
       {/* Header */}
-      <div className="mb-6 shrink-0">
+      <div className="mb-3 shrink-0">
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-3">
           <Users className="w-8 h-8 text-blue-500" /> Members
         </h2>
@@ -161,7 +161,7 @@ const Members = () => {
       </div>
 
       {/* Workspace selector — ด้านบนตาราง */}
-      <div className="flex items-center gap-3 mb-4 shrink-0">
+      <div className="flex items-center gap-3 mb-2 shrink-0">
         <span className="text-sm font-medium text-gray-500 dark:text-gray-400 shrink-0">Workspace:</span>
         <div className="relative">
           <select
@@ -178,10 +178,10 @@ const Members = () => {
         </span>
       </div>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar space-y-6">
+      <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3">
         {/* ── Current Members ── */}
         <div className="bg-white dark:bg-[#121212] border border-gray-200 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10 flex items-center justify-between">
+          <div className="px-4 py-3 border-b border-gray-200 dark:border-white/10 flex items-center justify-between">
             <h3 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               สมาชิกทีม
               <span className="text-sm font-normal text-gray-500">
@@ -192,23 +192,23 @@ const Members = () => {
           </div>
 
           {(!selectedSpace?.members || selectedSpace.members.length === 0) ? (
-            <div className="px-6 py-10 text-center text-gray-500 text-sm">
+            <div className="px-4 py-6 text-center text-gray-500 text-sm">
               ยังไม่มีสมาชิก — ใช้ฟอร์มด้านล่างเพื่อส่งคำเชิญ
             </div>
           ) : (
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50/50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
-                  <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">สมาชิก</th>
-                  <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">สิทธิ์</th>
-                  <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">หน้าที่</th>
-                  <th className="px-6 py-3"></th>
+                  <th className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">สมาชิก</th>
+                  <th className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">สิทธิ์</th>
+                  <th className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">หน้าที่</th>
+                  <th className="px-4 py-2"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-white/5">
                 {selectedSpace?.members?.map((m: any) => (
                   <tr key={m.userId} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-                    <td className="px-6 py-3">
+                    <td className="px-4 py-2">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full overflow-hidden bg-blue-100 flex items-center justify-center shrink-0">
                           {m.user?.avatarUrl
@@ -221,11 +221,11 @@ const Members = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-3">{roleBadge(m.role)}</td>
-                    <td className="px-6 py-3 text-xs text-gray-500">
+                    <td className="px-4 py-2">{roleBadge(m.role)}</td>
+                    <td className="px-4 py-2 text-xs text-gray-500">
                       {m.role === 'Member' ? 'แก้ไขได้' : m.role === 'Guest' ? 'อ่านได้อย่างเดียว' : 'เจ้าของ'}
                     </td>
-                    <td className="px-6 py-3">
+                    <td className="px-4 py-2">
                       {m.role !== 'Owner' && (
                         <div className="flex items-center gap-2 justify-end">
                           <button
@@ -256,7 +256,7 @@ const Members = () => {
         {/* ── Pending Invitations ── */}
         {pendingInvitations.length > 0 && (
           <div className="bg-white dark:bg-[#121212] border border-gray-200 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm">
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-white/10">
+            <div className="px-4 py-3 border-b border-gray-200 dark:border-white/10">
               <h3 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <Clock className="w-4 h-4 text-amber-500" />
                 รอยืนยัน ({pendingInvitations.length})
@@ -264,7 +264,7 @@ const Members = () => {
             </div>
             <div className="divide-y divide-gray-200 dark:divide-white/5">
               {pendingInvitations.map(inv => (
-                <div key={inv.id} className="flex items-center gap-4 px-6 py-3">
+                <div key={inv.id} className="flex items-center gap-4 px-4 py-2">
                   <div className="w-9 h-9 rounded-full bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center shrink-0">
                     <Mail className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                   </div>
@@ -288,11 +288,12 @@ const Members = () => {
         )}
 
         {/* ── Invite Form ── */}
-        <div className="bg-white dark:bg-[#121212] border border-gray-200 dark:border-white/5 rounded-2xl p-6 shadow-sm">
+        <div className="bg-white dark:bg-[#121212] border border-gray-200 dark:border-white/5 rounded-2xl p-4 shadow-sm">
           <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
             <Mail className="w-4 h-4 text-blue-500" /> เชิญสมาชิกใหม่
+
           </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
             ระบบจะส่งลิงก์ยืนยันไปที่ email — เมื่อยืนยันแล้วจะเข้าถึงทุก project ใน workspace ที่เลือกได้อัตโนมัติ
           </p>
           <form onSubmit={handleSendInvite} className="flex flex-wrap gap-2 items-center">
@@ -340,7 +341,7 @@ const Members = () => {
           </form>
 
           {/* Role description */}
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-500/10 rounded-xl">
               <Shield className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
               <div>

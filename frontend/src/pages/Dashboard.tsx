@@ -44,9 +44,6 @@ const Dashboard = () => {
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Welcome back, {user?.displayName || 'NBU IT Team'}</h2>
           <p className="text-gray-600 dark:text-gray-400 mt-2 text-lg">Here's a quick overview of your workspace today.</p>
         </div>
-        <button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all shadow-lg shadow-blue-500/30 hover:-translate-y-0.5">
-          + New Project
-        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

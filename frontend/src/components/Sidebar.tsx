@@ -231,7 +231,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
       
       <div className={`
         fixed md:static inset-y-0 left-0 z-30
-        ${isOpen ? 'translate-x-0 w-72' : '-translate-x-full md:translate-x-0 md:w-20'}
+        ${isOpen ? 'translate-x-0 w-[22rem]' : '-translate-x-full md:translate-x-0 md:w-20'}
         bg-white dark:bg-[#121212] border-r border-gray-200 dark:border-white/5 
         h-screen flex flex-col transition-all duration-300 ease-in-out
       `}>
@@ -250,7 +250,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
           </button>
         </div>
 
-        <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto custom-scrollbar">
+        <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto custom-scrollbar">
           {menuItems.map((item) => {
             const isActive = location.pathname.startsWith(item.path);
             return (
@@ -258,7 +258,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
                 key={item.label}
                 to={item.path}
                 title={!isOpen ? item.label : undefined}
-                className={`flex items-center ${isOpen ? 'space-x-3 px-4' : 'justify-center px-0'} py-3 rounded-xl transition-all duration-200 group ${
+                className={`flex items-center ${isOpen ? 'space-x-3 px-3' : 'justify-center px-0'} py-1.5 rounded-xl transition-all duration-200 group ${
                   isActive
                     ? 'bg-blue-50 dark:bg-blue-600/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20'
                     : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-gray-200 border border-transparent'
@@ -271,13 +271,13 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
           })}
 
           {/* Spaces & Projects Section */}
-          <div className="pt-6 pb-2">
+          <div className="pt-3 pb-1">
 
             {/* New Workspace button */}
             {isOpen ? (
               <button
                 onClick={() => setIsSpaceModalOpen(true)}
-                className="w-full flex items-center space-x-2 px-4 py-2 mb-4 text-xs font-semibold text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors border border-dashed border-gray-200 dark:border-white/10"
+                className="w-full flex items-center space-x-2 px-3 py-1.5 mb-2 text-xs font-semibold text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors border border-dashed border-gray-200 dark:border-white/10"
               >
                 <Building2 className="w-3.5 h-3.5 shrink-0" />
                 <span>New Workspace</span>
@@ -293,9 +293,9 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
             )}
 
             {spaces.map(space => (
-              <div key={space.id} className="mb-6">
+              <div key={space.id} className="mb-3">
                 {isOpen ? (
-                  <div className="flex items-center justify-between px-4 mb-2 group/space">
+                  <div className="flex items-center justify-between px-3 mb-1 group/space">
                     <span className="text-base font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider truncate max-w-[150px]" title={space.name}>{space.name}</span>
                     <div className="flex items-center space-x-0.5 opacity-0 group-hover/space:opacity-100 transition-opacity">
                       <button onClick={() => handleOpenTeamModal(space)} title={`Manage Team (${space.members?.length ?? 0})`} className="text-gray-400 hover:text-blue-500 transition-colors p-1 rounded-md hover:bg-blue-50 dark:hover:bg-blue-500/10">
@@ -331,7 +331,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
                   {space.folders?.map((folder: any) => (
                     <div key={folder.id} className="mb-1">
                       <div 
-                        className={`group flex items-center justify-between py-2 px-3 cursor-pointer rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 text-gray-600 dark:text-gray-400 ${isOpen ? 'mx-2' : 'mx-0 justify-center'}`}
+                        className={`group flex items-center justify-between py-1 px-2 cursor-pointer rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 text-gray-600 dark:text-gray-400 ${isOpen ? 'mx-1' : 'mx-0 justify-center'}`}
                         onClick={() => setExpandedFolders({...expandedFolders, [folder.id]: !expandedFolders[folder.id]})}
                         title={!isOpen ? folder.name : undefined}
                       >
@@ -371,7 +371,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
                             key={project.id}
                             to={path}
                             title={!isOpen ? project.name : undefined}
-                            className={`flex items-center ${isOpen ? 'space-x-3 px-4 pl-10' : 'justify-center px-0'} py-2 rounded-xl transition-all duration-200 group ${
+                            className={`flex items-center ${isOpen ? 'space-x-3 px-3 pl-8' : 'justify-center px-0'} py-1 rounded-xl transition-all duration-200 group ${
                               isActive
                                 ? 'bg-blue-50 dark:bg-blue-600/10 text-blue-600 dark:text-blue-400'
                                 : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-gray-200'
@@ -394,7 +394,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
                         key={project.id}
                         to={path}
                         title={!isOpen ? project.name : undefined}
-                        className={`flex items-center ${isOpen ? 'space-x-3 px-4' : 'justify-center px-0'} py-2.5 rounded-xl transition-all duration-200 group ${
+                        className={`flex items-center ${isOpen ? 'space-x-3 px-3' : 'justify-center px-0'} py-1 rounded-xl transition-all duration-200 group ${
                           isActive
                             ? 'bg-blue-50 dark:bg-blue-600/10 text-blue-600 dark:text-blue-400'
                             : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-gray-200'
@@ -415,7 +415,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
           <button 
             onClick={logout}
             title={!isOpen ? 'Logout' : undefined}
-            className={`flex items-center ${isOpen ? 'space-x-3 px-4' : 'justify-center px-0'} py-3 w-full rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-red-500 dark:hover:text-red-400 transition-all duration-200 group border border-transparent`}
+            className={`flex items-center ${isOpen ? 'space-x-3 px-3' : 'justify-center px-0'} py-1.5 w-full rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-red-500 dark:hover:text-red-400 transition-all duration-200 group border border-transparent`}
           >
             <LogOut className="w-5 h-5 shrink-0 text-gray-400 dark:text-gray-500 group-hover:text-red-500 dark:group-hover:text-red-400" />
             {isOpen && <span className="font-medium whitespace-nowrap overflow-hidden">Logout</span>}
