@@ -1,0 +1,35 @@
+# ===========================
+# Backend .gitignore
+# ===========================
+
+# Dependencies
+node_modules/
+
+# Environment Variables (ห้าม commit เด็ดขาด!)
+.env
+.env.*
+!.env.example
+
+# Build output
+dist/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Prisma generated client
+/generated/prisma/
+
+# Uploaded files (เก็บบน server ไม่ต้อง commit)
+uploads/*
+!uploads/.gitkeep
+
+# Test files
+test.ts
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db

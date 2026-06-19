@@ -1,0 +1,218 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["oitworkspace", "public"]
+}
+
+enum Role {
+  Admin
+  Member
+  Guest
+
+  @@schema("oitworkspace")
+}
+
+enum ProjectRole {
+  Owner
+  Member
+  Guest
+
+  @@schema("oitworkspace")
+}
+
+enum TaskStatus {
+  ToDo
+  InProgress
+  Testing
+  Done
+
+  @@schema("oitworkspace")
+}
+
+enum TaskPriority {
+  Low
+  Medium
+  High
+  Urgent
+
+  @@schema("oitworkspace")
+}
+
+enum AttachmentSource {
+  Local
+  GoogleDrive
+
+  @@schema("oitworkspace")
+}
+
+model User {
+  id            Int               @id @default(autoincrement())
+  email         String            @unique
+  displayName   String
+  avatarUrl     String?
+  systemRole    Role              @default(Member)
+  createdAt     DateTime          @default(now())
+
+  projects      ProjectMember[]
+  createdTasks  Task[]            @relation("TaskCreator")
+  assignedTasks TaskAssignee[]
+  attachments   TaskAttachment[]
+  links         TaskLink[]
+  comments      TaskComment[]
+  notifications Notification[]
+
+  @@schema("oitworkspace")
+}
+
+model Space {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String?   @db.Text
+  createdAt   DateTime  @default(now())
+  
+  folders     Folder[]
+  projects    Project[]
+
+  @@schema("oitworkspace")
+}
+
+model Folder {
+  id          Int       @id @default(autoincrement())
+  spaceId     Int
+  name        String
+  createdAt   DateTime  @default(now())
+
+  space       Space     @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  projects    Project[]
+
+  @@schema("oitworkspace")
+}
+
+model Project {
+  id          Int       @id @default(autoincrement())
+  spaceId     Int
+  folderId    Int?
+  name        String
+  description String?   @db.Text
+  status      String    @default("Active")
+  createdAt   DateTime  @default(now())
+  
+  space       Space             @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  folder      Folder?           @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  members     ProjectMember[]
+  tasks       Task[]
+
+  @@schema("oitworkspace")
+}
+
+model ProjectMember {
+  projectId   Int
+  userId      Int
+  role        ProjectRole @default(Member)
+  
+  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, userId])
+  @@schema("oitworkspace")
+}
+
+model Task {
+  id              Int       @id @default(autoincrement())
+  projectId       Int
+  parentTaskId    Int?
+  title           String
+  description     String?   @db.Text
+  status          TaskStatus @default(ToDo)
+  priority        TaskPriority @default(Medium)
+  progressPercent Int       @default(0)
+  dueDate         DateTime?
+  timeEstimate    String?
+  createdById     Int
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  project         Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parentTask      Task?           @relation("SubTasks", fields: [parentTaskId], references: [id], onDelete: Cascade)
+  subTasks        Task[]          @relation("SubTasks")
+  creator         User            @relation("TaskCreator", fields: [createdById], references: [id])
+  
+  assignees       TaskAssignee[]
+  attachments     TaskAttachment[]
+  links           TaskLink[]
+  comments        TaskComment[]
+  notifications   Notification[]
+
+  @@schema("oitworkspace")
+}
+
+model TaskAssignee {
+  taskId      Int
+  userId      Int
+  
+  task        Task        @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, userId])
+  @@schema("oitworkspace")
+}
+
+model TaskAttachment {
+  id          Int               @id @default(autoincrement())
+  taskId      Int
+  fileName    String
+  filePath    String            @db.Text
+  source      AttachmentSource  @default(Local)
+  uploadedById Int
+  uploadedAt  DateTime          @default(now())
+
+  task        Task              @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  uploader    User              @relation(fields: [uploadedById], references: [id])
+
+  @@schema("oitworkspace")
+}
+
+model TaskLink {
+  id          Int       @id @default(autoincrement())
+  taskId      Int
+  title       String
+  url         String    @db.Text
+  createdById Int
+
+  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  creator     User      @relation(fields: [createdById], references: [id])
+
+  @@schema("oitworkspace")
+}
+
+model TaskComment {
+  id          Int       @id @default(autoincrement())
+  taskId      Int
+  userId      Int
+  text        String    @db.Text
+  createdAt   DateTime  @default(now())
+
+  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@schema("oitworkspace")
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  taskId    Int?
+  type      String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task      Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@schema("oitworkspace")
+}

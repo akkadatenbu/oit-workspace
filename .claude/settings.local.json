@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la /d/coding/OIT_Task_Management/backend)",
+      "Read(//d/coding/OIT_Task_Management/backend/**)"
+    ]
+  }
+}
