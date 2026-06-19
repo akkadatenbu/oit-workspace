@@ -992,8 +992,9 @@ const ProjectView = () => {
                     </div>
                     {isAssigneeOpen && (
                       <div className="absolute z-50 top-full mt-1 w-full bg-white dark:bg-[#18181b] rounded-xl border border-gray-200 dark:border-white/10 shadow-xl overflow-hidden max-h-48 overflow-y-auto custom-scrollbar">
-                        {allUsers
-                          .filter(u =>
+                        {(project?.members?.map((m: any) => m.user) ?? [])
+                          .filter((u: any) =>
+                            u &&
                             !selectedTask.assignees?.some((a:any) => a.userId === u.id) &&
                             (u.displayName?.toLowerCase().includes(assigneeSearch.toLowerCase()) ||
                              u.email?.toLowerCase().includes(assigneeSearch.toLowerCase()))
@@ -1027,12 +1028,13 @@ const ProjectView = () => {
                               </div>
                             </button>
                           ))}
-                        {allUsers.filter(u =>
+                        {(project?.members?.map((m: any) => m.user) ?? []).filter((u: any) =>
+                          u &&
                           !selectedTask.assignees?.some((a:any) => a.userId === u.id) &&
                           (u.displayName?.toLowerCase().includes(assigneeSearch.toLowerCase()) ||
                            u.email?.toLowerCase().includes(assigneeSearch.toLowerCase()))
                         ).length === 0 && (
-                          <p className="px-3 py-3 text-sm text-gray-400 text-center">ไม่พบผู้ใช้</p>
+                          <p className="px-3 py-3 text-sm text-gray-400 text-center">ไม่พบสมาชิกใน project นี้</p>
                         )}
                       </div>
                     )}
