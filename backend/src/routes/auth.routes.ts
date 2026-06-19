@@ -9,8 +9,8 @@ router.get(
   '/google/callback',
   passport.authenticate('google', { failureRedirect: '/login?error=true' }),
   (req, res) => {
-    // กำหนดให้ Redirect กลับไปหน้า Frontend
-    res.redirect('http://localhost:5173/dashboard'); 
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    res.redirect(`${frontendUrl}/dashboard`);
   }
 );
 
