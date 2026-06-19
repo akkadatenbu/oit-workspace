@@ -33,16 +33,36 @@ import searchRoutes from './routes/search.routes';
 const app = express();
 const port = process.env.PORT || 5525;
 
-// อนุญาตให้ Frontend (Vite) เรียกใช้งาน API และส่ง Cookie Session มาได้
-app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
+// อนุญาตให้ Frontend เรียกใช้งาน API และส่ง Cookie Session มาได้
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'https://workspace.northbkk.ac.th',
+];
+app.use(cors({
+  origin: (origin, callback) => {
+    // allow requests with no origin (e.g. curl, mobile apps)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS: origin ${origin} not allowed`));
+    }
+  },
+  credentials: true,
+}));
 app.use(express.json());
 
+const isProduction = process.env.NODE_ENV === 'production';
 app.use(
   session({
     secret: process.env.SESSION_SECRET || 'nbu_oit_workspace_secret_key',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: process.env.NODE_ENV === 'production', maxAge: 24 * 60 * 60 * 1000 }
+    cookie: {
+      secure: isProduction,       // HTTPS only in production
+      sameSite: isProduction ? 'none' : 'lax',
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    }
   })
 );
 
