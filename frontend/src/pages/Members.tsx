@@ -160,6 +160,24 @@ const Members = () => {
         <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">จัดการสมาชิกทีมของแต่ละ Workspace</p>
       </div>
 
+      {/* Workspace selector — ด้านบนตาราง */}
+      <div className="flex items-center gap-3 mb-4 shrink-0">
+        <span className="text-sm font-medium text-gray-500 dark:text-gray-400 shrink-0">Workspace:</span>
+        <div className="relative">
+          <select
+            value={selectedSpaceId ?? ''}
+            onChange={e => setSelectedSpaceId(Number(e.target.value))}
+            className="pl-3 pr-8 py-2 text-sm font-medium bg-white dark:bg-[#121212] border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 appearance-none cursor-pointer shadow-sm"
+          >
+            {spaces.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+          <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        </div>
+        <span className="text-sm text-gray-400">
+          ({selectedSpace?.members?.length ?? 0} สมาชิก)
+        </span>
+      </div>
+
       <div className="flex-1 overflow-y-auto custom-scrollbar space-y-6">
         {/* ── Current Members ── */}
         <div className="bg-white dark:bg-[#121212] border border-gray-200 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm">
