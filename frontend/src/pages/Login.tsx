@@ -1,3 +1,7 @@
+const googleAuthUrl = import.meta.env.DEV
+  ? 'http://localhost:5525/api/auth/google'
+  : '/api/auth/google';
+
 const Login = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0a] flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 relative overflow-hidden transition-colors duration-300">
@@ -25,7 +29,7 @@ const Login = () => {
             </div>
             
             <a
-              href="http://localhost:5525/api/auth/google"
+              href={googleAuthUrl}
               className="group relative w-full flex justify-center items-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:ring-offset-white dark:focus:ring-offset-[#0a0a0a] transition-all duration-300 hover:shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:-translate-y-0.5"
             >
               <svg className="w-5 h-5 mr-3 bg-white rounded-full p-0.5" viewBox="0 0 24 24">
