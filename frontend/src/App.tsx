@@ -1,15 +1,28 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Login from './pages/Login';
 import MainLayout from './layouts/MainLayout';
 import Dashboard from './pages/Dashboard';
 import ProjectView from './pages/ProjectView';
 import MyTasks from './pages/MyTasks';
+import ConfirmInvitation from './pages/ConfirmInvitation';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  // หลัง login สำเร็จ ตรวจสอบ pendingRedirect (เช่น confirm invitation)
+  useEffect(() => {
+    if (!loading && user) {
+      const pending = localStorage.getItem('pendingRedirect');
+      if (pending) {
+        localStorage.removeItem('pendingRedirect');
+        navigate(pending, { replace: true });
+      }
+    }
+  }, [user, loading]);
 
   if (loading) {
     return (
@@ -36,6 +49,7 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/confirm-invitation/:token" element={<ConfirmInvitation />} />
             
             <Route path="/" element={
               <ProtectedRoute>

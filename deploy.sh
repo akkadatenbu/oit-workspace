@@ -18,3 +18,7 @@ npm run build
 
 echo "=== Done! ==="
 pm2 status
+
+#ใช้งาน:
+# chmod +x deploy.sh
+# ./deploy.sh

@@ -78,6 +78,8 @@ const ProjectView = () => {
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isUpdatingTask, setIsUpdatingTask] = useState(false);
+  const [assigneeSearch, setAssigneeSearch] = useState('');
+  const [isAssigneeOpen, setIsAssigneeOpen] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [newSubtaskDueDate, setNewSubtaskDueDate] = useState('');
   const [newSubtaskTimeEstimate, setNewSubtaskTimeEstimate] = useState('');
@@ -89,6 +91,10 @@ const ProjectView = () => {
 
   // Members Modal State
   const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<'Member' | 'Guest'>('Member');
+  const [isInviting, setIsInviting] = useState(false);
+  const [pendingInvitations, setPendingInvitations] = useState<any[]>([]);
   const [newMemberUserId, setNewMemberUserId] = useState('');
   const [newMemberRole, setNewMemberRole] = useState<'Member' | 'Guest'>('Member');
   const [isAddingMember, setIsAddingMember] = useState(false);
@@ -146,6 +152,38 @@ const ProjectView = () => {
       setSearchParams({}, { replace: true }); // เคลียร์ param ออกจาก URL
     }
   }, [tasks, searchParams]);
+
+  const fetchPendingInvitations = async () => {
+    try {
+      const { data } = await apiClient.get(`/projects/${id}/invitations`);
+      setPendingInvitations(data);
+    } catch { /* silent */ }
+  };
+
+  const handleSendInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inviteEmail.trim()) return;
+    try {
+      setIsInviting(true);
+      await apiClient.post(`/projects/${id}/invite`, { email: inviteEmail.trim(), role: inviteRole });
+      setInviteEmail('');
+      await fetchPendingInvitations();
+      Swal.fire({ icon: 'success', title: 'ส่งคำเชิญแล้ว!', text: `ส่งลิงก์ยืนยันไปที่ ${inviteEmail.trim()} เรียบร้อย`, timer: 3000, showConfirmButton: false });
+    } catch (err: any) {
+      Swal.fire('Error', err.response?.data?.error || 'Failed to send invitation', 'error');
+    } finally {
+      setIsInviting(false);
+    }
+  };
+
+  const handleCancelInvitation = async (invId: number, email: string) => {
+    try {
+      await apiClient.delete(`/invitations/${invId}`);
+      setPendingInvitations(prev => prev.filter(i => i.id !== invId));
+    } catch {
+      Swal.fire('Error', `Failed to cancel invitation to ${email}`, 'error');
+    }
+  };
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -479,7 +517,7 @@ const ProjectView = () => {
         <div className="flex items-center space-x-3">
           {/* Members avatars + manage button */}
           <button
-            onClick={() => setIsMembersModalOpen(true)}
+            onClick={() => { setIsMembersModalOpen(true); fetchPendingInvitations(); }}
             className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-[#121212] border border-gray-200 dark:border-white/10 rounded-xl hover:border-blue-400 transition-colors text-sm text-gray-600 dark:text-gray-400"
             title="Manage project members"
           >
@@ -955,30 +993,66 @@ const ProjectView = () => {
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1 flex items-center">
                     <Users className="w-4 h-4 mr-2 text-blue-500" /> Assignees
                   </label>
+                  {/* Searchable assignee combobox */}
                   <div className="relative">
-                    <select
-                      className="w-full px-4 py-2.5 bg-gray-50 dark:bg-[#121212] border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 appearance-none font-normal"
-                      onChange={async (e) => {
-                        const userId = e.target.value;
-                        if (!userId) return;
-                        if (selectedTask.assignees?.some((a:any) => a.userId === Number(userId))) return;
-                        try {
-                          const { data } = await apiClient.post(`/tasks/${selectedTask.id}/assignees`, { userId });
-                          const updatedTask = { ...selectedTask, assignees: [...(selectedTask.assignees || []), data] };
-                          setSelectedTask(updatedTask);
-                          setTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
-                        } catch (err) {
-                          Swal.fire('Error', 'Failed to assign user', 'error');
-                        }
-                        e.target.value = ''; // Reset select
-                      }}
-                      defaultValue=""
-                    >
-                      <option value="" disabled>Add Assignee...</option>
-                      {allUsers.map((u:any) => (
-                        <option key={u.id} value={u.id}>{u.displayName}</option>
-                      ))}
-                    </select>
+                    <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-[#121212] border border-gray-200 dark:border-white/10 rounded-xl focus-within:ring-2 focus-within:ring-blue-500/50 transition-all">
+                      <Users className="w-4 h-4 text-gray-400 shrink-0" />
+                      <input
+                        type="text"
+                        value={assigneeSearch}
+                        onChange={e => { setAssigneeSearch(e.target.value); setIsAssigneeOpen(true); }}
+                        onFocus={() => setIsAssigneeOpen(true)}
+                        onBlur={() => setTimeout(() => setIsAssigneeOpen(false), 150)}
+                        placeholder="ค้นหาชื่อหรืออีเมล..."
+                        className="flex-1 bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none font-normal placeholder-gray-400"
+                      />
+                    </div>
+                    {isAssigneeOpen && (
+                      <div className="absolute z-50 top-full mt-1 w-full bg-white dark:bg-[#18181b] rounded-xl border border-gray-200 dark:border-white/10 shadow-xl overflow-hidden max-h-48 overflow-y-auto custom-scrollbar">
+                        {allUsers
+                          .filter(u =>
+                            !selectedTask.assignees?.some((a:any) => a.userId === u.id) &&
+                            (u.displayName?.toLowerCase().includes(assigneeSearch.toLowerCase()) ||
+                             u.email?.toLowerCase().includes(assigneeSearch.toLowerCase()))
+                          )
+                          .map((u: any) => (
+                            <button
+                              key={u.id}
+                              type="button"
+                              onMouseDown={async () => {
+                                setAssigneeSearch('');
+                                setIsAssigneeOpen(false);
+                                try {
+                                  const { data } = await apiClient.post(`/tasks/${selectedTask.id}/assignees`, { userId: u.id });
+                                  const updatedTask = { ...selectedTask, assignees: [...(selectedTask.assignees || []), data] };
+                                  setSelectedTask(updatedTask);
+                                  setTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
+                                } catch (err) {
+                                  Swal.fire('Error', 'Failed to assign user', 'error');
+                                }
+                              }}
+                              className="w-full flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-left"
+                            >
+                              <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center shrink-0 overflow-hidden">
+                                {u.avatarUrl
+                                  ? <img src={u.avatarUrl} alt="" className="w-full h-full object-cover" />
+                                  : <span className="text-[10px] font-bold text-blue-600">{u.displayName?.charAt(0)}</span>}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{u.displayName}</p>
+                                <p className="text-xs text-gray-500 truncate">{u.email}</p>
+                              </div>
+                            </button>
+                          ))}
+                        {allUsers.filter(u =>
+                          !selectedTask.assignees?.some((a:any) => a.userId === u.id) &&
+                          (u.displayName?.toLowerCase().includes(assigneeSearch.toLowerCase()) ||
+                           u.email?.toLowerCase().includes(assigneeSearch.toLowerCase()))
+                        ).length === 0 && (
+                          <p className="px-3 py-3 text-sm text-gray-400 text-center">ไม่พบผู้ใช้</p>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {selectedTask.assignees?.map((a:any) => (
@@ -1430,15 +1504,16 @@ const ProjectView = () => {
       {/* Members Modal */}
       <Modal isOpen={isMembersModalOpen} onClose={() => setIsMembersModalOpen(false)} title="Project Members" maxWidth="max-w-lg">
         <div className="space-y-4">
-          {/* Current members */}
-          <div className="space-y-2">
+
+          {/* ── Confirmed members ── */}
+          <div className="space-y-1.5">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">สมาชิก ({project?.members?.length ?? 0})</p>
             {project?.members?.map((m: any) => (
               <div key={m.userId} className="flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-white/5 rounded-xl">
                 <div className="w-9 h-9 rounded-full overflow-hidden bg-blue-100 flex items-center justify-center shrink-0">
                   {m.user?.avatarUrl
                     ? <img src={m.user.avatarUrl} alt="" className="w-full h-full object-cover" />
-                    : <span className="text-sm font-bold text-blue-600">{m.user?.displayName?.charAt(0)}</span>
-                  }
+                    : <span className="text-sm font-bold text-blue-600">{m.user?.displayName?.charAt(0)}</span>}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{m.user?.displayName}</p>
@@ -1446,17 +1521,13 @@ const ProjectView = () => {
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   {m.role === 'Owner'
-                    ? <span className="flex items-center gap-1 text-[10px] font-bold text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-500/10 px-2 py-0.5 rounded-full"><Crown className="w-3 h-3" /> Owner</span>
+                    ? <span className="flex items-center gap-1 text-[10px] font-bold text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-500/10 px-2 py-0.5 rounded-full"><Crown className="w-3 h-3" />Owner</span>
                     : m.role === 'Member'
-                      ? <span className="flex items-center gap-1 text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-2 py-0.5 rounded-full"><Shield className="w-3 h-3" /> Member</span>
-                      : <span className="text-[10px] font-bold text-gray-500 bg-gray-100 dark:bg-white/10 px-2 py-0.5 rounded-full">Guest</span>
-                  }
+                      ? <span className="flex items-center gap-1 text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-2 py-0.5 rounded-full"><Shield className="w-3 h-3" />Member</span>
+                      : <span className="text-[10px] font-bold text-gray-500 bg-gray-100 dark:bg-white/10 px-2 py-0.5 rounded-full">Guest</span>}
                   {m.role !== 'Owner' && (
-                    <button
-                      onClick={() => handleRemoveMember(m.userId, m.user?.displayName)}
-                      className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors"
-                      title="Remove member"
-                    >
+                    <button onClick={() => handleRemoveMember(m.userId, m.user?.displayName)}
+                      className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors" title="Remove">
                       <X className="w-3.5 h-3.5" />
                     </button>
                   )}
@@ -1465,41 +1536,57 @@ const ProjectView = () => {
             ))}
           </div>
 
-          {/* Add member */}
+          {/* ── Pending invitations ── */}
+          {pendingInvitations.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">รอยืนยัน ({pendingInvitations.length})</p>
+              {pendingInvitations.map(inv => (
+                <div key={inv.id} className="flex items-center gap-3 p-2.5 bg-amber-50 dark:bg-amber-500/5 rounded-xl border border-amber-200 dark:border-amber-500/20">
+                  <div className="w-9 h-9 rounded-full bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center shrink-0">
+                    <span className="text-amber-600 dark:text-amber-400 text-xs font-bold">{inv.email.charAt(0).toUpperCase()}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-900 dark:text-white truncate">{inv.email}</p>
+                    <p className="text-xs text-amber-600 dark:text-amber-400">Pending · {inv.role}</p>
+                  </div>
+                  <button onClick={() => handleCancelInvitation(inv.id, inv.email)}
+                    className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors" title="Cancel invitation">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── Invite by email ── */}
           <div className="border-t border-gray-200 dark:border-white/10 pt-4">
             <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
-              <UserPlus className="w-4 h-4 text-blue-500" /> Invite member
+              <UserPlus className="w-4 h-4 text-blue-500" /> เชิญด้วย Email
             </p>
-            <form onSubmit={handleAddMember} className="flex gap-2">
-              <select
-                value={newMemberUserId}
-                onChange={e => setNewMemberUserId(e.target.value)}
-                className="flex-1 px-3 py-2 text-sm bg-gray-50 dark:bg-[#121212] border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 font-normal appearance-none"
+            <form onSubmit={handleSendInvite} className="space-y-2">
+              <input
+                type="email"
+                value={inviteEmail}
+                onChange={e => setInviteEmail(e.target.value)}
+                placeholder="email@northbkk.ac.th"
+                className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-[#121212] border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 font-normal"
                 required
-              >
-                <option value="">Select user...</option>
-                {allUsers
-                  .filter(u => !project?.members?.some((m: any) => m.userId === u.id))
-                  .map((u: any) => (
-                    <option key={u.id} value={u.id}>{u.displayName} ({u.email})</option>
-                  ))
-                }
-              </select>
-              <select
-                value={newMemberRole}
-                onChange={e => setNewMemberRole(e.target.value as 'Member' | 'Guest')}
-                className="w-28 px-3 py-2 text-sm bg-gray-50 dark:bg-[#121212] border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 font-normal appearance-none"
-              >
-                <option value="Member">Member</option>
-                <option value="Guest">Guest</option>
-              </select>
-              <button
-                type="submit"
-                disabled={isAddingMember || !newMemberUserId}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-50 shrink-0"
-              >
-                {isAddingMember ? '...' : 'Add'}
-              </button>
+              />
+              <div className="flex gap-2">
+                <select
+                  value={inviteRole}
+                  onChange={e => setInviteRole(e.target.value as 'Member' | 'Guest')}
+                  className="flex-1 px-3 py-2 text-sm bg-gray-50 dark:bg-[#121212] border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 font-normal appearance-none"
+                >
+                  <option value="Member">Member — แก้ไขได้</option>
+                  <option value="Guest">Guest — ดูได้อย่างเดียว</option>
+                </select>
+                <button type="submit" disabled={isInviting || !inviteEmail.trim()}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-50 shrink-0 flex items-center gap-1.5">
+                  {isInviting ? '...' : <><UserPlus className="w-3.5 h-3.5" />ส่งคำเชิญ</>}
+                </button>
+              </div>
+              <p className="text-xs text-gray-400">ระบบจะส่งลิงก์ยืนยันไปที่ email นั้น · หมดอายุใน 7 วัน</p>
             </form>
           </div>
         </div>
