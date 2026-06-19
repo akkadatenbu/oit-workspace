@@ -53,8 +53,27 @@ const Members = () => {
     } catch { /* silent */ }
   };
 
-  useEffect(() => { fetchSpaces(); }, []);
-  useEffect(() => { if (selectedSpaceId) fetchPending(selectedSpaceId); }, [selectedSpaceId]);
+  useEffect(() => {
+    fetchSpaces();
+    // auto-refresh ทุก 10 วินาที เพื่อจับสถานะที่เปลี่ยนจาก Pending → Accepted
+    const interval = setInterval(() => {
+      fetchSpaces();
+      if (selectedSpaceId) fetchPending(selectedSpaceId);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (selectedSpaceId) {
+      fetchPending(selectedSpaceId);
+      // เริ่ม polling pending ใหม่ทุกครั้งที่เปลี่ยน space
+      const interval = setInterval(() => {
+        fetchSpaces();
+        fetchPending(selectedSpaceId);
+      }, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [selectedSpaceId]);
 
   const handleSendInvite = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -37,6 +37,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
   const [teamModalSpace, setTeamModalSpace] = useState<any>(null);
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [teamSearch, setTeamSearch] = useState('');
+  const [teamAddRole, setTeamAddRole] = useState<'Member' | 'Guest'>('Member');
   const [isAddingTeamMember, setIsAddingTeamMember] = useState(false);
 
   const fetchSpaces = async () => {
@@ -577,9 +578,19 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
 
             {/* เพิ่มสมาชิก */}
             <div className="border-t border-gray-200 dark:border-white/10 pt-4">
-              <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
-                <Users className="w-4 h-4 text-blue-500" /> เพิ่มสมาชิกทีม
-              </p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                  <Users className="w-4 h-4 text-blue-500" /> เพิ่มสมาชิกทีม
+                </p>
+                <select
+                  value={teamAddRole}
+                  onChange={e => setTeamAddRole(e.target.value as 'Member' | 'Guest')}
+                  className="text-xs px-2 py-1 bg-gray-100 dark:bg-white/10 border border-gray-200 dark:border-white/10 rounded-lg text-gray-700 dark:text-gray-300 focus:outline-none appearance-none cursor-pointer font-medium"
+                >
+                  <option value="Member">Member — แก้ไขได้</option>
+                  <option value="Guest">Guest — อ่านอย่างเดียว</option>
+                </select>
+              </div>
               <input
                 type="text"
                 value={teamSearch}
@@ -602,7 +613,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
                       onClick={async () => {
                         try {
                           setIsAddingTeamMember(true);
-                          await apiClient.post(`/spaces/${teamModalSpace.id}/members`, { userId: u.id, role: 'Member' });
+                          await apiClient.post(`/spaces/${teamModalSpace.id}/members`, { userId: u.id, role: teamAddRole });
                           await fetchSpaces();
                           const { data } = await apiClient.get('/spaces');
                           const updated = data.find((s: any) => s.id === teamModalSpace.id);
@@ -625,7 +636,12 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
                         <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{u.displayName}</p>
                         <p className="text-xs text-gray-500 truncate">{u.email}</p>
                       </div>
-                      <span className="ml-auto text-xs text-blue-600 dark:text-blue-400 font-medium shrink-0">+ เพิ่ม</span>
+                      <div className="ml-auto flex items-center gap-1.5 shrink-0">
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${teamAddRole === 'Member' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'bg-gray-100 text-gray-500 dark:bg-white/10 dark:text-gray-400'}`}>
+                          {teamAddRole}
+                        </span>
+                        <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">+ เพิ่ม</span>
+                      </div>
                     </button>
                   ))}
                 {allUsers.filter(u =>
