@@ -78,10 +78,11 @@ model Space {
   ownerId     Int?
   createdAt   DateTime  @default(now())
 
-  owner       User?         @relation("SpaceOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  owner       User?               @relation("SpaceOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   members     SpaceMember[]
   folders     Folder[]
   projects    Project[]
+  invitations ProjectInvitation[] @relation("SpaceInvitations")
 
   @@schema("oitworkspace")
 }
@@ -171,7 +172,8 @@ model Task {
 
 model ProjectInvitation {
   id          Int         @id @default(autoincrement())
-  projectId   Int
+  projectId   Int?
+  spaceId     Int?
   email       String
   token       String      @unique
   role        ProjectRole @default(Member)
@@ -180,8 +182,9 @@ model ProjectInvitation {
   expiresAt   DateTime
   createdAt   DateTime    @default(now())
 
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  invitedBy User    @relation("InvitationSender", fields: [invitedById], references: [id])
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  space     Space?   @relation("SpaceInvitations", fields: [spaceId], references: [id], onDelete: Cascade)
+  invitedBy User     @relation("InvitationSender", fields: [invitedById], references: [id])
 
   @@schema("oitworkspace")
 }

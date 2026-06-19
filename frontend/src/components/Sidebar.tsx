@@ -212,8 +212,9 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
   };
 
   const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-    { icon: CheckSquare, label: 'My Tasks', path: '/tasks' },
+    { icon: LayoutDashboard, label: 'Dashboard',   path: '/dashboard' },
+    { icon: CheckSquare,     label: 'My Tasks',    path: '/tasks' },
+    { icon: Users,           label: 'Members',     path: '/members' },
     ...(user?.systemRole === 'Admin' ? [{ icon: Crown, label: 'Admin Panel', path: '/admin' }] : []),
   ];
 

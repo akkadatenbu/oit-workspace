@@ -35,7 +35,8 @@ const ConfirmInvitation = () => {
     try {
       const { data } = await apiClient.post(`/invitations/${token}/confirm`);
       setStatus('success');
-      setTimeout(() => navigate(`/projects/${data.projectId}`), 2000);
+      const dest = data.type === 'space' ? '/members' : `/projects/${data.projectId}`;
+      setTimeout(() => navigate(dest), 2000);
     } catch (err: any) {
       setErrorMsg(err.response?.data?.error || 'เกิดข้อผิดพลาด');
       setStatus('error');

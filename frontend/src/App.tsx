@@ -7,6 +7,7 @@ import ProjectView from './pages/ProjectView';
 import MyTasks from './pages/MyTasks';
 import ConfirmInvitation from './pages/ConfirmInvitation';
 import AdminPanel from './pages/AdminPanel';
+import Members from './pages/Members';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
@@ -62,6 +63,7 @@ function App() {
               <Route path="projects/:id" element={<ProjectView />} />
               <Route path="tasks" element={<MyTasks />} />
               <Route path="admin" element={<AdminPanel />} />
+              <Route path="members" element={<Members />} />
             </Route>
           </Routes>
         </BrowserRouter>
