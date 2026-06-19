@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, CheckSquare, LogOut, ChevronLeft, ChevronRight, Plus, Layers, Folder, Pencil, Trash2, Building2, Crown } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, LogOut, ChevronLeft, ChevronRight, Plus, Layers, Folder, Pencil, Trash2, Building2, Crown, Users, X, Shield } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { apiClient } from '../api/client';
@@ -14,7 +14,7 @@ interface SidebarProps {
 const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const [spaces, setSpaces] = useState<any[]>([]);
   
   // Modal State
@@ -31,6 +31,13 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
   const [newSpaceName, setNewSpaceName] = useState('');
   const [newSpaceDescription, setNewSpaceDescription] = useState('');
   const [selectedSpaceId, setSelectedSpaceId] = useState<number | null>(null);
+
+  // Space Team Modal
+  const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
+  const [teamModalSpace, setTeamModalSpace] = useState<any>(null);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
+  const [teamSearch, setTeamSearch] = useState('');
+  const [isAddingTeamMember, setIsAddingTeamMember] = useState(false);
 
   const fetchSpaces = async () => {
     try {
@@ -91,6 +98,56 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
       Swal.fire('Error', 'Failed to create folder', 'error');
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  const handleOpenTeamModal = async (space: any) => {
+    setTeamModalSpace(space);
+    setIsTeamModalOpen(true);
+    setTeamSearch('');
+    try {
+      const { data } = await apiClient.get('/users');
+      setAllUsers(data);
+    } catch { /* silent */ }
+  };
+
+  const handleAddTeamMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const userId = (e.currentTarget as HTMLFormElement).dataset.userid;
+    if (!userId || !teamModalSpace) return;
+    try {
+      setIsAddingTeamMember(true);
+      await apiClient.post(`/spaces/${teamModalSpace.id}/members`, { userId, role: 'Member' });
+      await fetchSpaces();
+      // อัปเดต teamModalSpace ด้วย
+      const { data } = await apiClient.get('/spaces');
+      const updated = data.find((s: any) => s.id === teamModalSpace.id);
+      if (updated) setTeamModalSpace(updated);
+    } catch (err: any) {
+      Swal.fire('Error', err.response?.data?.error || 'Failed to add member', 'error');
+    } finally {
+      setIsAddingTeamMember(false);
+    }
+  };
+
+  const handleRemoveTeamMember = async (spaceId: number, userId: number, name: string) => {
+    const result = await Swal.fire({
+      title: `ลบ "${name}" ออกจากทีม?`,
+      text: 'จะถูกลบออกจากทุก project ใน workspace นี้ด้วย',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      confirmButtonText: 'ลบออก'
+    });
+    if (!result.isConfirmed) return;
+    try {
+      await apiClient.delete(`/spaces/${spaceId}/members/${userId}`);
+      await fetchSpaces();
+      const { data } = await apiClient.get('/spaces');
+      const updated = data.find((s: any) => s.id === spaceId);
+      if (updated) setTeamModalSpace(updated);
+    } catch {
+      Swal.fire('Error', 'Failed to remove member', 'error');
     }
   };
 
@@ -172,8 +229,6 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
       }
     }
   };
-
-  const { user } = useAuth();
 
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
@@ -260,6 +315,9 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
                   <div className="flex items-center justify-between px-4 mb-2 group/space">
                     <span className="text-base font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider truncate max-w-[150px]" title={space.name}>{space.name}</span>
                     <div className="flex items-center space-x-0.5 opacity-0 group-hover/space:opacity-100 transition-opacity">
+                      <button onClick={() => handleOpenTeamModal(space)} title={`Manage Team (${space.members?.length ?? 0})`} className="text-gray-400 hover:text-blue-500 transition-colors p-1 rounded-md hover:bg-blue-50 dark:hover:bg-blue-500/10">
+                        <Users className="w-3.5 h-3.5" />
+                      </button>
                       <button onClick={() => handleRenameSpace(space)} title="Rename Workspace" className="text-gray-400 hover:text-blue-500 transition-colors p-1 rounded-md hover:bg-blue-50 dark:hover:bg-blue-500/10">
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
@@ -489,6 +547,117 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Space Team Modal */}
+      <Modal
+        isOpen={isTeamModalOpen}
+        onClose={() => { setIsTeamModalOpen(false); setTeamModalSpace(null); setTeamSearch(''); }}
+        title={`ทีม: ${teamModalSpace?.name ?? ''}`}
+        maxWidth="max-w-md"
+      >
+        {teamModalSpace && (
+          <div className="space-y-4">
+            {/* สมาชิกปัจจุบัน */}
+            <div className="space-y-1.5">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                สมาชิกทีม ({teamModalSpace.members?.length ?? 0})
+              </p>
+              {teamModalSpace.members?.length === 0 && (
+                <p className="text-sm text-gray-500 py-2">ยังไม่มีสมาชิก</p>
+              )}
+              {teamModalSpace.members?.map((m: any) => (
+                <div key={m.userId} className="flex items-center gap-3 p-2 bg-gray-50 dark:bg-white/5 rounded-xl">
+                  <div className="w-8 h-8 rounded-full overflow-hidden bg-blue-100 flex items-center justify-center shrink-0">
+                    {m.user?.avatarUrl
+                      ? <img src={m.user.avatarUrl} alt="" className="w-full h-full object-cover" />
+                      : <span className="text-xs font-bold text-blue-600">{m.user?.displayName?.charAt(0)}</span>}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{m.user?.displayName}</p>
+                    <p className="text-xs text-gray-500 truncate">{m.user?.email}</p>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+                      <Shield className="w-3 h-3" />{m.role}
+                    </span>
+                    <button
+                      onClick={() => handleRemoveTeamMember(teamModalSpace.id, m.userId, m.user?.displayName)}
+                      className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors"
+                      title="ลบออกจากทีม"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* เพิ่มสมาชิก */}
+            <div className="border-t border-gray-200 dark:border-white/10 pt-4">
+              <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                <Users className="w-4 h-4 text-blue-500" /> เพิ่มสมาชิกทีม
+              </p>
+              <input
+                type="text"
+                value={teamSearch}
+                onChange={e => setTeamSearch(e.target.value)}
+                placeholder="ค้นหาชื่อหรืออีเมล..."
+                className="w-full px-3 py-2 mb-2 text-sm bg-gray-50 dark:bg-[#121212] border border-gray-200 dark:border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-gray-900 dark:text-white font-normal"
+              />
+              <div className="space-y-1 max-h-48 overflow-y-auto custom-scrollbar">
+                {allUsers
+                  .filter(u =>
+                    !teamModalSpace.members?.some((m: any) => m.userId === u.id) &&
+                    u.id !== teamModalSpace.ownerId &&
+                    (u.displayName?.toLowerCase().includes(teamSearch.toLowerCase()) ||
+                     u.email?.toLowerCase().includes(teamSearch.toLowerCase()))
+                  )
+                  .map((u: any) => (
+                    <button
+                      key={u.id}
+                      disabled={isAddingTeamMember}
+                      onClick={async () => {
+                        try {
+                          setIsAddingTeamMember(true);
+                          await apiClient.post(`/spaces/${teamModalSpace.id}/members`, { userId: u.id, role: 'Member' });
+                          await fetchSpaces();
+                          const { data } = await apiClient.get('/spaces');
+                          const updated = data.find((s: any) => s.id === teamModalSpace.id);
+                          if (updated) setTeamModalSpace(updated);
+                          setTeamSearch('');
+                        } catch (err: any) {
+                          Swal.fire('Error', err.response?.data?.error || 'Failed', 'error');
+                        } finally {
+                          setIsAddingTeamMember(false);
+                        }
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl transition-colors text-left disabled:opacity-50"
+                    >
+                      <div className="w-8 h-8 rounded-full overflow-hidden bg-blue-100 flex items-center justify-center shrink-0">
+                        {u.avatarUrl
+                          ? <img src={u.avatarUrl} alt="" className="w-full h-full object-cover" />
+                          : <span className="text-xs font-bold text-blue-600">{u.displayName?.charAt(0)}</span>}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{u.displayName}</p>
+                        <p className="text-xs text-gray-500 truncate">{u.email}</p>
+                      </div>
+                      <span className="ml-auto text-xs text-blue-600 dark:text-blue-400 font-medium shrink-0">+ เพิ่ม</span>
+                    </button>
+                  ))}
+                {allUsers.filter(u =>
+                  !teamModalSpace.members?.some((m: any) => m.userId === u.id) &&
+                  u.id !== teamModalSpace.ownerId &&
+                  (u.displayName?.toLowerCase().includes(teamSearch.toLowerCase()) ||
+                   u.email?.toLowerCase().includes(teamSearch.toLowerCase()))
+                ).length === 0 && (
+                  <p className="text-sm text-gray-400 text-center py-3">ไม่พบผู้ใช้</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </Modal>
     </>
   );

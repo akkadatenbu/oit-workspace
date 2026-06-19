@@ -58,6 +58,7 @@ model User {
   createdAt     DateTime          @default(now())
 
   ownedSpaces      Space[]              @relation("SpaceOwner")
+  spaceMemberships SpaceMember[]
   projects         ProjectMember[]
   invitationsSent  ProjectInvitation[]  @relation("InvitationSender")
   createdTasks  Task[]            @relation("TaskCreator")
@@ -77,10 +78,23 @@ model Space {
   ownerId     Int?
   createdAt   DateTime  @default(now())
 
-  owner       User?     @relation("SpaceOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  owner       User?         @relation("SpaceOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  members     SpaceMember[]
   folders     Folder[]
   projects    Project[]
 
+  @@schema("oitworkspace")
+}
+
+model SpaceMember {
+  spaceId Int
+  userId  Int
+  role    ProjectRole @default(Member)
+
+  space   Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  user    User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([spaceId, userId])
   @@schema("oitworkspace")
 }
 

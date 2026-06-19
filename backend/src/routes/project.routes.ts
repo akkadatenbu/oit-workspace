@@ -14,9 +14,13 @@ async function canAccessProject(projectId: number, userId: number, isAdmin: bool
     include: { space: true, members: true }
   });
   if (!project) return false;
-  const isSpaceOwner = project.space.ownerId === null || project.space.ownerId === userId;
-  const isMember = project.members.some(m => m.userId === userId);
-  return isSpaceOwner || isMember;
+  const isSpaceOwner = (project.space as any).ownerId === null || (project.space as any).ownerId === userId;
+  const isProjectMember = project.members.some(m => m.userId === userId);
+  // ตรวจสอบ SpaceMember ด้วย
+  const isSpaceMember = await prisma.spaceMember.findUnique({
+    where: { spaceId_userId: { spaceId: project.spaceId, userId } }
+  });
+  return isSpaceOwner || isProjectMember || !!isSpaceMember;
 }
 
 // ดึงข้อมูล Project พร้อม access check
@@ -66,10 +70,26 @@ router.post('/', isAuthenticated, async (req, res) => {
         description
       }
     });
-    // auto-add creator as Owner
+
+    // auto-add creator เป็น Owner
     await prisma.projectMember.create({
       data: { projectId: project.id, userId, role: 'Owner' }
     });
+
+    // auto-add SpaceMembers ทั้งหมดเป็น ProjectMember
+    const spaceMembers = await prisma.spaceMember.findMany({
+      where: { spaceId: Number(spaceId) }
+    });
+    await Promise.all(
+      spaceMembers
+        .filter(m => m.userId !== userId) // ไม่ต้องเพิ่ม creator ซ้ำ
+        .map(m => prisma.projectMember.upsert({
+          where: { projectId_userId: { projectId: project.id, userId: m.userId } },
+          update: { role: m.role },
+          create: { projectId: project.id, userId: m.userId, role: m.role }
+        }))
+    );
+
     res.json(project);
   } catch (error) {
     res.status(500).json({ error: 'Failed to create project' });

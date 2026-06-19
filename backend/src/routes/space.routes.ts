@@ -14,20 +14,23 @@ const userIsAdmin = (req: any) => (req.user as any)?.systemRole === 'Admin';
 router.get('/', isAuthenticated, async (req, res) => {
   const userId = (req.user as any).id;
   try {
-    // หา spaceId ที่ user เป็น member ของ project ใน space นั้น
-    const memberSpaceIds = await prisma.project.findMany({
-      where: { members: { some: { userId } } },
-      select: { spaceId: true }
-    });
-    const memberSpaceIdList = memberSpaceIds.map(p => p.spaceId);
+    // รวม spaceId จาก: ProjectMember + SpaceMember
+    const [projectSpaces, spaceTeams] = await Promise.all([
+      prisma.project.findMany({ where: { members: { some: { userId } } }, select: { spaceId: true } }),
+      prisma.spaceMember.findMany({ where: { userId }, select: { spaceId: true } })
+    ]);
+    const accessibleSpaceIds = [
+      ...projectSpaces.map(p => p.spaceId),
+      ...spaceTeams.map(m => m.spaceId)
+    ];
 
     const whereClause = userIsAdmin(req)
       ? {}
       : {
           OR: [
-            { ownerId: userId },       // เจ้าของ space
-            { ownerId: null },         // space เก่าก่อน migration (ยังให้เข้าได้)
-            { id: { in: memberSpaceIdList } } // ถูก invite ใน project
+            { ownerId: userId },
+            { ownerId: null },
+            { id: { in: accessibleSpaceIds } }
           ]
         };
 
@@ -35,7 +38,12 @@ router.get('/', isAuthenticated, async (req, res) => {
       where: whereClause,
       include: {
         folders: { include: { projects: true } },
-        projects: { where: { folderId: null } }
+        projects: { where: { folderId: null } },
+        members: {
+          include: {
+            user: { select: { id: true, displayName: true, email: true, avatarUrl: true } }
+          }
+        }
       }
     });
     res.json(spaces);
@@ -94,6 +102,83 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete space' });
+  }
+});
+
+// ── Space Team Management ─────────────────────────────────────
+
+// เพิ่มสมาชิกเข้าทีม Space + auto-add เป็น ProjectMember ทุก project ใน Space
+router.post('/:id/members', isAuthenticated, async (req, res) => {
+  const spaceId = Number(req.params.id);
+  const currentUserId = (req.user as any).id;
+  const { userId, role = 'Member' } = req.body;
+
+  try {
+    const space = await prisma.space.findUnique({ where: { id: spaceId } });
+    if (!space) return res.status(404).json({ error: 'Space not found' });
+    if (!userIsAdmin(req) && space.ownerId !== null && space.ownerId !== currentUserId) {
+      return res.status(403).json({ error: 'Only space owner can manage team' });
+    }
+
+    // เพิ่มเป็น SpaceMember (upsert กันซ้ำ)
+    const member = await prisma.spaceMember.upsert({
+      where: { spaceId_userId: { spaceId, userId: Number(userId) } },
+      update: { role },
+      create: { spaceId, userId: Number(userId), role: role as any },
+      include: { user: { select: { id: true, displayName: true, email: true, avatarUrl: true } } }
+    });
+
+    // Auto-add เป็น ProjectMember ทุก project ใน Space
+    const projects = await prisma.project.findMany({ where: { spaceId }, select: { id: true } });
+    await Promise.all(projects.map(p =>
+      prisma.projectMember.upsert({
+        where: { projectId_userId: { projectId: p.id, userId: Number(userId) } },
+        update: { role: role as any },
+        create: { projectId: p.id, userId: Number(userId), role: role as any }
+      })
+    ));
+
+    res.json(member);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to add team member' });
+  }
+});
+
+// ลบสมาชิกออกจากทีม Space + ลบออกจาก ProjectMember ทุก project ใน Space
+router.delete('/:id/members/:userId', isAuthenticated, async (req, res) => {
+  const spaceId = Number(req.params.id);
+  const targetUserId = Number(req.params.userId);
+  const currentUserId = (req.user as any).id;
+
+  try {
+    const space = await prisma.space.findUnique({ where: { id: spaceId } });
+    if (!space) return res.status(404).json({ error: 'Space not found' });
+    if (!userIsAdmin(req) && space.ownerId !== null && space.ownerId !== currentUserId) {
+      return res.status(403).json({ error: 'Only space owner can manage team' });
+    }
+
+    // ลบ SpaceMember
+    await prisma.spaceMember.delete({
+      where: { spaceId_userId: { spaceId, userId: targetUserId } }
+    });
+
+    // ลบ ProjectMember ทุก project ใน Space (เฉพาะที่ role ไม่ใช่ Owner)
+    const projects = await prisma.project.findMany({ where: { spaceId }, select: { id: true } });
+    await Promise.all(projects.map(p =>
+      prisma.projectMember.deleteMany({
+        where: {
+          projectId: p.id,
+          userId: targetUserId,
+          role: { not: 'Owner' }
+        }
+      })
+    ));
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to remove team member' });
   }
 });
 
