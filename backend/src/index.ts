@@ -33,6 +33,9 @@ import searchRoutes from './routes/search.routes';
 const app = express();
 const port = process.env.PORT || 5525;
 
+// Trust Nginx reverse proxy — จำเป็นสำหรับ secure cookie
+app.set('trust proxy', 1);
+
 // อนุญาตให้ Frontend เรียกใช้งาน API และส่ง Cookie Session มาได้
 const allowedOrigins = [
   'http://localhost:5173',
@@ -59,8 +62,8 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: isProduction,       // HTTPS only in production
-      sameSite: isProduction ? 'none' : 'lax',
+      secure: isProduction,        // HTTPS only in production
+      sameSite: 'lax',             // same domain — lax ใช้ได้
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     }
   })
