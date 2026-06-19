@@ -273,7 +273,6 @@ const ProjectView = () => {
     
     if (destination.droppableId === source.droppableId) {
       // Reorder in the same column
-      const originalTasks = [...tasks];
       const colTasks = tasks.filter(t => t.status === source.droppableId);
       const otherTasks = tasks.filter(t => t.status !== source.droppableId);
       
