@@ -14,7 +14,8 @@ const ConfirmInvitation = () => {
   const { user, loading: authLoading } = useAuth();
 
   const [invitation, setInvitation] = useState<any>(null);
-  const [status, setStatus] = useState<'loading' | 'ready' | 'confirming' | 'success' | 'error'>('loading');
+  const [status, setStatus] = useState<'loading' | 'ready' | 'success' | 'error'>('loading');
+  const [isConfirming, setIsConfirming] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   // โหลดรายละเอียด invitation
@@ -30,7 +31,7 @@ const ConfirmInvitation = () => {
   }, [token]);
 
   const handleConfirm = async () => {
-    setStatus('confirming');
+    setIsConfirming(true);
     try {
       const { data } = await apiClient.post(`/invitations/${token}/confirm`);
       setStatus('success');
@@ -38,6 +39,8 @@ const ConfirmInvitation = () => {
     } catch (err: any) {
       setErrorMsg(err.response?.data?.error || 'เกิดข้อผิดพลาด');
       setStatus('error');
+    } finally {
+      setIsConfirming(false);
     }
   };
 
@@ -148,10 +151,10 @@ const ConfirmInvitation = () => {
                   )}
                   <button
                     onClick={handleConfirm}
-                    disabled={status === 'confirming'}
+                    disabled={isConfirming}
                     className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-sm font-medium transition-all disabled:opacity-50"
                   >
-                    {status === 'confirming' ? 'กำลังยืนยัน...' : 'ยืนยันเข้าร่วมโปรเจกต์'}
+                    {isConfirming ? 'กำลังยืนยัน...' : 'ยืนยันเข้าร่วมโปรเจกต์'}
                   </button>
                 </div>
               )}

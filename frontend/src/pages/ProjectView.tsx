@@ -95,9 +95,6 @@ const ProjectView = () => {
   const [inviteRole, setInviteRole] = useState<'Member' | 'Guest'>('Member');
   const [isInviting, setIsInviting] = useState(false);
   const [pendingInvitations, setPendingInvitations] = useState<any[]>([]);
-  const [newMemberUserId, setNewMemberUserId] = useState('');
-  const [newMemberRole, setNewMemberRole] = useState<'Member' | 'Guest'>('Member');
-  const [isAddingMember, setIsAddingMember] = useState(false);
 
   // Move Project Modal State
   const [isMoveProjectModalOpen, setIsMoveProjectModalOpen] = useState(false);
@@ -185,20 +182,6 @@ const ProjectView = () => {
     }
   };
 
-  const handleAddMember = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMemberUserId) return;
-    try {
-      setIsAddingMember(true);
-      await apiClient.post(`/projects/${id}/members`, { userId: newMemberUserId, role: newMemberRole });
-      await fetchProject();
-      setNewMemberUserId('');
-    } catch (err) {
-      Swal.fire('Error', 'Failed to add member', 'error');
-    } finally {
-      setIsAddingMember(false);
-    }
-  };
 
   const handleRemoveMember = async (userId: number, displayName: string) => {
     const result = await Swal.fire({
