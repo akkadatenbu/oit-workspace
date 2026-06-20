@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { apiClient } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
@@ -7,6 +7,45 @@ import {
   Shield, User, ChevronDown, RefreshCw, Building2
 } from 'lucide-react';
 import Swal from 'sweetalert2';
+
+const DepartmentCell = ({ value, onSave }: { value: string; onSave: (v: string) => void }) => {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const commit = () => {
+    setEditing(false);
+    if (draft !== value) onSave(draft);
+  };
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        autoFocus
+        value={draft}
+        onChange={e => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') { setDraft(value); setEditing(false); } }}
+        className="w-36 px-2 py-1 text-xs bg-white dark:bg-[#0a0a0a] border border-blue-400 rounded-lg focus:outline-none text-gray-900 dark:text-white"
+        placeholder="ระบุหน่วยงาน..."
+      />
+    );
+  }
+
+  return (
+    <button
+      onClick={() => { setDraft(value); setEditing(true); }}
+      className="text-xs text-left hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+      title="คลิกเพื่อแก้ไข"
+    >
+      {value
+        ? <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 rounded-md">{value}</span>
+        : <span className="text-gray-300 dark:text-gray-600 italic">— คลิกเพิ่ม</span>
+      }
+    </button>
+  );
+};
 
 const roleBadge = (role: string) => {
   if (role === 'Admin') return <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400"><Crown className="w-3 h-3" />Admin</span>;
@@ -47,6 +86,15 @@ const AdminPanel = () => {
   };
 
   useEffect(() => { fetchAll(); }, []);
+
+  const handleUpdateDepartment = async (userId: number, value: string) => {
+    try {
+      await apiClient.patch(`/admin/users/${userId}/department`, { department: value });
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, department: value || null } : u));
+    } catch {
+      // silent fail - value จะ revert เมื่อ re-render
+    }
+  };
 
   const handleToggleUpload = async (userId: number, displayName: string, canUpload: boolean) => {
     const action = canUpload ? 'ปิด' : 'เปิด';
@@ -245,6 +293,7 @@ const AdminPanel = () => {
                     <tr className="border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-white/5">
                       <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">User</th>
                       <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Role</th>
+                      <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">หน่วยงาน</th>
                       <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Tasks</th>
                       <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Projects</th>
                       <th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">เข้าร่วม</th>
@@ -275,6 +324,12 @@ const AdminPanel = () => {
                               </span>
                             )}
                           </div>
+                        </td>
+                        <td className="px-5 py-3">
+                          <DepartmentCell
+                            value={u.department ?? ''}
+                            onSave={(val) => handleUpdateDepartment(u.id, val)}
+                          />
                         </td>
                         <td className="px-5 py-3 text-sm text-gray-600 dark:text-gray-400">{u._count?.createdTasks ?? 0}</td>
                         <td className="px-5 py-3 text-sm text-gray-600 dark:text-gray-400">{u._count?.projects ?? 0}</td>

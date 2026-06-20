@@ -47,7 +47,7 @@ router.get('/users', isAuthenticated, isAdmin, async (req, res) => {
       orderBy: { createdAt: 'desc' },
       select: {
         id: true, email: true, displayName: true, avatarUrl: true,
-        systemRole: true, isActive: true, canUploadFiles: true, createdAt: true,
+        systemRole: true, isActive: true, canUploadFiles: true, department: true, createdAt: true,
         _count: {
           select: {
             createdTasks: true,
@@ -80,6 +80,21 @@ router.patch('/users/:id/status', isAuthenticated, isAdmin, async (req, res) => 
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: 'Failed to update user status' });
+  }
+});
+
+// อัปเดต department/note
+router.patch('/users/:id/department', isAuthenticated, isAdmin, async (req, res) => {
+  const { department } = req.body;
+  try {
+    const updated = await prisma.user.update({
+      where: { id: Number(req.params.id) },
+      data: { department: department?.trim() || null },
+      select: { id: true, department: true }
+    });
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update department' });
   }
 });
 
