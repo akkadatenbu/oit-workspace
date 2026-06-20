@@ -123,6 +123,25 @@ router.patch('/:id', isAuthenticated, async (req, res) => {
   }
 });
 
+// Archive / Unarchive Task
+router.patch('/:id/archive', isAuthenticated, async (req, res) => {
+  try {
+    const task = await prisma.task.findUnique({
+      where: { id: Number(req.params.id) },
+      select: { isArchived: true }
+    });
+    if (!task) return res.status(404).json({ error: 'Task not found' });
+    const updated = await prisma.task.update({
+      where: { id: Number(req.params.id) },
+      data: { isArchived: !task.isArchived },
+      select: { id: true, isArchived: true }
+    });
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to archive task' });
+  }
+});
+
 // ลบ Task
 router.delete('/:id', isAuthenticated, async (req, res) => {
   try {

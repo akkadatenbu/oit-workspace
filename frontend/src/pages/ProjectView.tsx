@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, MessageSquare, LayoutGrid, List, AlignLeft, CheckSquare, Link as LinkIcon, Paperclip, Download, Calendar, Users, X, FolderInput, Pencil, Trash2, ChevronUp, ChevronDown, ChevronsUpDown, Send, Clock, Timer, UserPlus, Shield, Crown } from 'lucide-react';
+import { Plus, MessageSquare, LayoutGrid, List, AlignLeft, CheckSquare, Link as LinkIcon, Paperclip, Download, Calendar, Users, X, FolderInput, Pencil, Trash2, ChevronUp, ChevronDown, ChevronsUpDown, Send, Clock, Timer, UserPlus, Shield, Crown, Archive, ArchiveRestore } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
@@ -62,6 +62,7 @@ const ProjectView = () => {
   const [project, setProject] = useState<any>(null);
   const [tasks, setTasks] = useState<any[]>([]);
   const [viewMode, setViewMode] = useState<'board' | 'list'>('board');
+  const [showArchived, setShowArchived] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -518,6 +519,24 @@ const ProjectView = () => {
             <span className="text-xs font-medium">{project?.members?.length ?? 0}</span>
           </button>
 
+          {/* Archived toggle */}
+          {(() => {
+            const archivedCount = tasks.filter(t => t.isArchived && t.parentTaskId === null).length;
+            return archivedCount > 0 ? (
+              <button
+                onClick={() => setShowArchived(p => !p)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors ${
+                  showArchived
+                    ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-300 dark:border-amber-500/40 text-amber-700 dark:text-amber-400'
+                    : 'bg-white dark:bg-[#121212] border-gray-200 dark:border-white/10 text-gray-500 hover:border-amber-300 dark:hover:border-amber-500/40'
+                }`}
+              >
+                <Archive className="w-3.5 h-3.5" />
+                Archived ({archivedCount})
+              </button>
+            ) : null;
+          })()}
+
           <div className="bg-white dark:bg-[#121212] rounded-lg p-1 border border-gray-200 dark:border-white/5 flex shadow-sm">
              <button onClick={() => setViewMode('board')} className={`p-1.5 rounded-md transition-colors ${viewMode === 'board' ? 'bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500'}`}><LayoutGrid className="w-5 h-5" /></button>
              <button onClick={() => setViewMode('list')} className={`p-1.5 rounded-md transition-colors ${viewMode === 'list' ? 'bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500'}`}><List className="w-5 h-5" /></button>
@@ -529,7 +548,7 @@ const ProjectView = () => {
         <DragDropContext onDragEnd={onDragEnd}>
           <div className="flex-1 flex gap-4 pb-4 items-start min-h-0">
             {columns.map(columnId => {
-              const colTasks = tasks.filter(t => t.status === columnId && t.parentTaskId === null);
+              const colTasks = tasks.filter(t => t.status === columnId && t.parentTaskId === null && !t.isArchived);
               return (
                 <div key={columnId} className="flex-1 min-w-0 flex flex-col bg-gray-50/80 dark:bg-[#121212]/60 backdrop-blur-xl rounded-2xl border border-gray-200 dark:border-white/5 p-4 h-full">
                   <div className="flex items-center justify-between mb-5">
@@ -676,7 +695,7 @@ const ProjectView = () => {
             : <ChevronDown className="w-3.5 h-3.5 ml-1 text-blue-500" />;
         };
 
-        const sortedTasks = [...tasks.filter(t => t.parentTaskId === null)].sort((a, b) => {
+        const sortedTasks = [...tasks.filter(t => t.parentTaskId === null && !t.isArchived)].sort((a, b) => {
           const dir = listSortDir === 'asc' ? 1 : -1;
           if (listSortField === 'title') return dir * a.title.localeCompare(b.title, 'th');
           if (listSortField === 'status') return dir * ((statusOrder[a.status] || 0) - (statusOrder[b.status] || 0));
@@ -849,6 +868,46 @@ const ProjectView = () => {
           </div>
         </div>
         );
+      })()}
+
+      {/* ── Archived Tasks Section ── */}
+      {showArchived && (() => {
+        const archivedTasks = tasks.filter(t => t.isArchived && t.parentTaskId === null);
+        return archivedTasks.length > 0 ? (
+          <div className="mt-4 shrink-0">
+            <div className="flex items-center gap-2 mb-3">
+              <Archive className="w-4 h-4 text-amber-500" />
+              <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">Archived Tasks ({archivedTasks.length})</span>
+            </div>
+            <div className="bg-amber-50/50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-500/20 rounded-2xl overflow-hidden">
+              {archivedTasks.map(task => (
+                <div key={task.id} className="flex items-center gap-3 px-4 py-2.5 border-b border-amber-100 dark:border-amber-500/10 last:border-0 group hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors">
+                  <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border shrink-0 ${getPriorityColor(task.priority)}`}>
+                    {task.priority}
+                  </span>
+                  <span
+                    className="flex-1 text-sm text-gray-500 dark:text-gray-400 line-through cursor-pointer hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                    onClick={() => { setSelectedTask(task); setIsEditModalOpen(true); }}
+                  >
+                    {task.title}
+                  </span>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full border shrink-0 ${getStatusColor(task.status)}`}>
+                    {columnLabels[task.status]}
+                  </span>
+                  <button
+                    onClick={async () => {
+                      const { data } = await apiClient.patch(`/tasks/${task.id}/archive`);
+                      setTasks(tasks.map(t => t.id === task.id ? { ...t, isArchived: data.isArchived } : t));
+                    }}
+                    className="opacity-0 group-hover:opacity-100 flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 hover:underline shrink-0 transition-opacity"
+                  >
+                    <ArchiveRestore className="w-3.5 h-3.5" /> Unarchive
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null;
       })()}
 
       {/* Create Task Modal */}
@@ -1142,6 +1201,25 @@ const ProjectView = () => {
                   className="text-red-500 hover:text-red-600 text-sm font-semibold px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
                 >
                   Delete Task
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const { data } = await apiClient.patch(`/tasks/${selectedTask.id}/archive`);
+                      const updatedTask = { ...selectedTask, isArchived: data.isArchived };
+                      setTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
+                      setIsEditModalOpen(false);
+                    } catch {
+                      Swal.fire('Error', 'Failed to archive task', 'error');
+                    }
+                  }}
+                  className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 text-sm font-semibold px-3 py-2 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors"
+                >
+                  {selectedTask.isArchived
+                    ? <><ArchiveRestore className="w-4 h-4" />Unarchive</>
+                    : <><Archive className="w-4 h-4" />Archive</>
+                  }
                 </button>
                 <div className="flex space-x-3">
                   <button 

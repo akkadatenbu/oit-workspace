@@ -32,6 +32,7 @@ router.get('/:id', isAuthenticated, async (req, res) => {
       include: {
         space: true,
         tasks: {
+          where: (req.query.showArchived === 'true') ? {} : { isArchived: false },
           include: {
             assignees: { include: { user: true } },
             subTasks: true,
