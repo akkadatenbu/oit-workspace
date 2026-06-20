@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Bell, Search, Sun, Moon, Menu, Layers, X, CheckSquare, Clock, HelpCircle } from 'lucide-react';
+import { Bell, Search, Sun, Moon, Menu, Layers, X, CheckSquare, Clock, HelpCircle, Sparkles, KeyRound, Loader2 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
@@ -17,6 +17,26 @@ const Navbar = ({ toggleSidebar }: NavbarProps) => {
   const { theme, toggleTheme } = useTheme();
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // ── AI state ───────────────────────────────────────────────
+  const [isAiOpen,      setIsAiOpen]      = useState(false);
+  const [aiProvider,    setAiProvider]    = useState<'groq' | 'openrouter'>(
+    (user?.aiProvider as 'groq' | 'openrouter') || 'groq'
+  );
+  const [groqKey,       setGroqKey]       = useState(user?.groqApiKey || '');
+  const [openrouterKey, setOpenrouterKey] = useState(user?.openrouterApiKey || '');
+  const [aiKeySaved,    setAiKeySaved]    = useState(false);
+  const [aiResult,      setAiResult]      = useState('');
+  const [aiLoading,     setAiLoading]     = useState(false);
+  const [aiError,       setAiError]       = useState('');
+  const aiRef = useRef<HTMLDivElement>(null);
+
+  // sync เมื่อ user โหลดจาก server
+  useEffect(() => {
+    if (user?.aiProvider)       setAiProvider(user.aiProvider as 'groq' | 'openrouter');
+    if (user?.groqApiKey)       setGroqKey(user.groqApiKey);
+    if (user?.openrouterApiKey) setOpenrouterKey(user.openrouterApiKey);
+  }, [user?.aiProvider, user?.groqApiKey, user?.openrouterApiKey]);
 
   // ── Search state ───────────────────────────────────────────
   const [searchQuery,   setSearchQuery]   = useState('');
@@ -72,10 +92,52 @@ const Navbar = ({ toggleSidebar }: NavbarProps) => {
     const handler = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) setIsSearchOpen(false);
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) setIsNotifOpen(false);
+      if (aiRef.current && !aiRef.current.contains(e.target as Node)) setIsAiOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  // key ที่ active ตาม provider ที่เลือก
+  const currentKey    = aiProvider === 'groq' ? groqKey : openrouterKey;
+  const setCurrentKey = aiProvider === 'groq' ? setGroqKey : setOpenrouterKey;
+
+  // ── AI key save ────────────────────────────────────────────
+  const handleSaveApiKey = async () => {
+    try {
+      await apiClient.patch('/users/me/settings', {
+        aiProvider,
+        groqApiKey:       groqKey.trim() || null,
+        openrouterApiKey: openrouterKey.trim() || null,
+      });
+      setAiKeySaved(true);
+      setTimeout(() => setAiKeySaved(false), 2000);
+    } catch { /* silent */ }
+  };
+
+  // ── AI analyze ─────────────────────────────────────────────
+  const handleAiAnalyze = async () => {
+    if (!currentKey.trim()) {
+      setAiError(`กรุณาใส่ API Key สำหรับ ${aiProvider === 'openrouter' ? 'OpenRouter' : 'Groq'}`);
+      return;
+    }
+    setAiLoading(true);
+    setAiResult('');
+    setAiError('');
+    try {
+      const { data: tasks } = await apiClient.get('/tasks');
+      const { data } = await apiClient.post('/ai/analyze', {
+        apiKey: currentKey.trim(),
+        provider: aiProvider,
+        tasks
+      });
+      setAiResult(data.result);
+    } catch (err: any) {
+      setAiError(err.response?.data?.error || 'เกิดข้อผิดพลาด กรุณาตรวจสอบ API Key');
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const handleSearchSelect = (type: 'task' | 'project', item: any) => {
     setSearchQuery('');
@@ -213,6 +275,138 @@ const Navbar = ({ toggleSidebar }: NavbarProps) => {
         >
           {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
         </button>
+
+        {/* AI Analysis */}
+        <div ref={aiRef} className="relative">
+          <button
+            onClick={() => { setIsAiOpen(p => !p); setAiResult(''); setAiError(''); }}
+            className={`p-2 rounded-full transition-colors relative ${isAiOpen ? 'bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400' : 'hover:bg-gray-100 dark:hover:bg-white/5 text-gray-500 dark:text-gray-400'}`}
+            title="AI วิเคราะห์งาน"
+          >
+            <Sparkles className="w-5 h-5" />
+          </button>
+
+          {isAiOpen && (
+            <div className="absolute right-0 top-full mt-2 w-96 bg-white dark:bg-[#18181b] rounded-2xl border border-gray-200 dark:border-white/10 shadow-2xl overflow-hidden z-50 flex flex-col" style={{ maxHeight: '80vh' }}>
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-white/5 shrink-0">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-purple-500" />
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white">AI วิเคราะห์งาน</h3>
+                  <span className="text-[10px] bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded-full font-bold">Groq</span>
+                </div>
+                <button onClick={() => setIsAiOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Provider + API Key */}
+              <div className="px-4 py-3 border-b border-gray-100 dark:border-white/5 shrink-0 space-y-2.5">
+                {/* Provider selector */}
+                <div className="flex gap-1.5">
+                  {([
+                    { id: 'groq',       label: 'Groq',       badge: 'Free', color: 'orange' },
+                    { id: 'openrouter', label: 'OpenRouter', badge: 'Free', color: 'blue'   },
+                  ] as const).map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => { setAiProvider(p.id); setAiKeySaved(false); }}
+                      className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                        aiProvider === p.id
+                          ? 'bg-purple-50 dark:bg-purple-500/10 border-purple-300 dark:border-purple-500/40 text-purple-700 dark:text-purple-300'
+                          : 'bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-500 hover:border-gray-300 dark:hover:border-white/20'
+                      }`}
+                    >
+                      {p.label}
+                      <span className="text-[9px] bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 px-1 rounded font-bold">{p.badge}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* API Key input */}
+                <div>
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">
+                    <KeyRound className="w-3.5 h-3.5" />
+                    {aiProvider === 'groq' ? 'Groq API Key' : 'OpenRouter API Key'}
+                    <a
+                      href={aiProvider === 'groq' ? 'https://console.groq.com/keys' : 'https://openrouter.ai/settings/keys'}
+                      target="_blank" rel="noopener noreferrer"
+                      className="text-blue-500 hover:underline ml-auto font-normal"
+                    >
+                      รับฟรีที่นี่ →
+                    </a>
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="password"
+                      value={currentKey}
+                      onChange={e => { setCurrentKey(e.target.value); setAiKeySaved(false); }}
+                      placeholder={aiProvider === 'groq' ? 'gsk_...' : 'sk-or-...'}
+                      className="flex-1 px-3 py-1.5 text-sm bg-gray-50 dark:bg-[#0a0a0a] border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 font-normal"
+                    />
+                    <button
+                      onClick={handleSaveApiKey}
+                      className={`shrink-0 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                        aiKeySaved
+                          ? 'bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400'
+                          : 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-500/10 hover:text-purple-600 dark:hover:text-purple-400'
+                      }`}
+                    >
+                      {aiKeySaved ? '✓' : 'บันทึก'}
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-gray-400 mt-1">Key เก็บใน account — ใช้ได้ทุกเครื่อง</p>
+                </div>
+              </div>
+
+              {/* Analyze button */}
+              <div className="px-4 py-3 shrink-0">
+                <button
+                  onClick={handleAiAnalyze}
+                  disabled={aiLoading || !currentKey.trim()}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white text-sm font-medium rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {aiLoading
+                    ? <><Loader2 className="w-4 h-4 animate-spin" />กำลังวิเคราะห์...</>
+                    : <><Sparkles className="w-4 h-4" />วิเคราะห์ Task ของฉัน</>
+                  }
+                </button>
+              </div>
+
+              {/* Error */}
+              {aiError && (
+                <div className="mx-4 mb-3 px-3 py-2 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg text-xs text-red-600 dark:text-red-400 shrink-0">
+                  {aiError}
+                </div>
+              )}
+
+              {/* Result */}
+              {aiResult && (
+                <div className="flex-1 overflow-y-auto custom-scrollbar px-4 pb-4">
+                  <div className="prose prose-sm dark:prose-invert max-w-none">
+                    {aiResult.split('\n').map((line, i) => {
+                      if (line.startsWith('## ')) {
+                        return <h3 key={i} className="text-sm font-bold text-gray-900 dark:text-white mt-4 mb-2 first:mt-0 flex items-center gap-1">{line.replace('## ', '')}</h3>;
+                      }
+                      if (line.startsWith('- ') || line.startsWith('• ')) {
+                        return <p key={i} className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed pl-3 border-l-2 border-purple-200 dark:border-purple-500/30 my-1">{line.replace(/^[-•] /, '')}</p>;
+                      }
+                      if (line.trim() === '') return <div key={i} className="h-1" />;
+                      return <p key={i} className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed my-1">{line}</p>;
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Empty state */}
+              {!aiResult && !aiLoading && !aiError && (
+                <div className="px-4 pb-4 text-center">
+                  <p className="text-xs text-gray-400">AI จะวิเคราะห์ task ทั้งหมดของคุณและให้คำแนะนำเป็นภาษาไทย</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Help */}
         <Link

@@ -31,4 +31,25 @@ router.get('/', isAuthenticated, async (req, res) => {
   }
 });
 
+// บันทึก AI settings ของตัวเอง
+router.patch('/me/settings', isAuthenticated, async (req, res) => {
+  const userId = (req.user as any).id;
+  const { groqApiKey, openrouterApiKey, aiProvider } = req.body;
+  try {
+    const data: Record<string, any> = {};
+    if (groqApiKey       !== undefined) data.groqApiKey       = groqApiKey?.trim() || null;
+    if (openrouterApiKey !== undefined) data.openrouterApiKey = openrouterApiKey?.trim() || null;
+    if (aiProvider       !== undefined) data.aiProvider       = aiProvider || 'groq';
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data,
+      select: { id: true, aiProvider: true, groqApiKey: true, openrouterApiKey: true }
+    });
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to save settings' });
+  }
+});
+
 export default router;

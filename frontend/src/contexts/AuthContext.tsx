@@ -9,6 +9,9 @@ export interface User {
   systemRole: string;
   isActive: boolean;
   canUploadFiles: boolean;
+  aiProvider: string | null;
+  groqApiKey: string | null;
+  openrouterApiKey: string | null;
 }
 
 interface AuthContextType {

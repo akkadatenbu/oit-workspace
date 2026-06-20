@@ -58,7 +58,10 @@ model User {
   isActive        Boolean           @default(true)
   canUploadFiles  Boolean           @default(false)
   department      String?
-  createdAt       DateTime          @default(now())
+  aiProvider         String?           @default("groq")
+  groqApiKey         String?
+  openrouterApiKey   String?
+  createdAt          DateTime          @default(now())
 
   ownedSpaces      Space[]              @relation("SpaceOwner")
   spaceMemberships SpaceMember[]
