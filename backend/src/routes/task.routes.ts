@@ -23,7 +23,13 @@ const upload = multer({ storage });
 router.get('/', isAuthenticated, async (req, res) => {
   try {
     const tasks = await prisma.task.findMany({
-      where: { createdById: (req.user as any).id },
+      where: {
+        parentTaskId: null,
+        OR: [
+          { createdById: (req.user as any).id },
+          { assignees: { some: { userId: (req.user as any).id } } }
+        ]
+      },
       include: {
         project: { include: { space: true } },
         subTasks: true,

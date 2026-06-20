@@ -3,6 +3,7 @@ import { Plus, MessageSquare, LayoutGrid, List, AlignLeft, CheckSquare, Link as 
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { apiClient } from '../api/client';
 import Modal from '../components/Modal';
 import Swal from 'sweetalert2';
@@ -56,6 +57,7 @@ const ProjectView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { user } = useAuth();
   
   const [project, setProject] = useState<any>(null);
   const [tasks, setTasks] = useState<any[]>([]);
@@ -429,6 +431,14 @@ const ProjectView = () => {
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
+
+  // สิทธิ์จัดการ: Admin / เจ้าของ space / project Owner เท่านั้น
+  const spaceOwnerId = (project?.space as any)?.ownerId;
+  const myProjectRole = project?.members?.find((m: any) => m.userId === user?.id)?.role;
+  const canManage = user?.systemRole === 'Admin'
+    || spaceOwnerId === null
+    || spaceOwnerId === user?.id
+    || myProjectRole === 'Owner';
 
   if (loading) {
     return (
@@ -941,9 +951,10 @@ const ProjectView = () => {
                   <input
                     type="text"
                     value={selectedTask.timeEstimate || ''}
-                    onChange={(e) => setSelectedTask({...selectedTask, timeEstimate: e.target.value})}
-                    placeholder="1d, 2h..."
-                    className="w-full px-3 py-2.5 bg-gray-50 dark:bg-[#121212] border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm font-normal"
+                    onChange={(e) => canManage && setSelectedTask({...selectedTask, timeEstimate: e.target.value})}
+                    placeholder={canManage ? '1d, 2h...' : '—'}
+                    readOnly={!canManage}
+                    className={`w-full px-3 py-2.5 bg-gray-50 dark:bg-[#121212] border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-900 dark:text-white focus:outline-none font-normal ${canManage ? 'focus:ring-2 focus:ring-blue-500/50' : 'cursor-default opacity-75'}`}
                   />
                 </div>
                 <div className="w-24">
@@ -966,8 +977,8 @@ const ProjectView = () => {
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1 flex items-center">
                     <Users className="w-4 h-4 mr-2 text-blue-500" /> Assignees
                   </label>
-                  {/* Searchable assignee combobox */}
-                  <div className="relative">
+                  {/* Searchable assignee combobox — owner only */}
+                  {canManage && <div className="relative">
                     <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-[#121212] border border-gray-200 dark:border-white/10 rounded-xl focus-within:ring-2 focus-within:ring-blue-500/50 transition-all">
                       <Users className="w-4 h-4 text-gray-400 shrink-0" />
                       <input
@@ -1028,21 +1039,23 @@ const ProjectView = () => {
                         )}
                       </div>
                     )}
-                  </div>
+                  </div>}
                   <div className="mt-2 flex flex-wrap gap-2">
                     {selectedTask.assignees?.map((a:any) => (
                       <span key={a.userId} className="inline-flex items-center px-2 py-1 rounded-md bg-blue-50 text-blue-700 text-xs font-medium dark:bg-blue-500/10 dark:text-blue-400">
                         {a.user.displayName}
-                        <button type="button" onClick={async () => {
-                          try {
-                            await apiClient.delete(`/tasks/${selectedTask.id}/assignees/${a.userId}`);
-                            const updatedTask = { ...selectedTask, assignees: selectedTask.assignees.filter((ass:any) => ass.userId !== a.userId) };
-                            setSelectedTask(updatedTask);
-                            setTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
-                          } catch (err) {
-                            Swal.fire('Error', 'Failed to remove assignee', 'error');
-                          }
-                        }} className="ml-1.5 hover:text-red-500"><X className="w-3 h-3" /></button>
+                        {canManage && (
+                          <button type="button" onClick={async () => {
+                            try {
+                              await apiClient.delete(`/tasks/${selectedTask.id}/assignees/${a.userId}`);
+                              const updatedTask = { ...selectedTask, assignees: selectedTask.assignees.filter((ass:any) => ass.userId !== a.userId) };
+                              setSelectedTask(updatedTask);
+                              setTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
+                            } catch (err) {
+                              Swal.fire('Error', 'Failed to remove assignee', 'error');
+                            }
+                          }} className="ml-1.5 hover:text-red-500"><X className="w-3 h-3" /></button>
+                        )}
                       </span>
                     ))}
                   </div>
@@ -1054,8 +1067,9 @@ const ProjectView = () => {
                   <input
                     type="date"
                     value={selectedTask.dueDate ? new Date(selectedTask.dueDate).toISOString().split('T')[0] : ''}
-                    onChange={(e) => setSelectedTask({...selectedTask, dueDate: e.target.value})}
-                    className="w-full px-3 py-2.5 bg-gray-50 dark:bg-[#121212] border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 font-normal"
+                    onChange={(e) => canManage && setSelectedTask({...selectedTask, dueDate: e.target.value})}
+                    readOnly={!canManage}
+                    className={`w-full px-3 py-2.5 bg-gray-50 dark:bg-[#121212] border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-900 dark:text-white focus:outline-none font-normal ${canManage ? 'focus:ring-2 focus:ring-blue-500/50' : 'cursor-default opacity-75'}`}
                   />
                 </div>
                 <div className="w-36">
@@ -1478,6 +1492,9 @@ const ProjectView = () => {
 
       {/* Members Modal */}
       <Modal isOpen={isMembersModalOpen} onClose={() => setIsMembersModalOpen(false)} title="Project Members" maxWidth="max-w-lg">
+        {(() => {
+          const isSpaceOwner = (project?.space as any)?.ownerId === user?.id || user?.systemRole === 'Admin';
+          return (
         <div className="space-y-4">
 
           {/* ── Confirmed members ── */}
@@ -1500,7 +1517,7 @@ const ProjectView = () => {
                     : m.role === 'Member'
                       ? <span className="flex items-center gap-1 text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-2 py-0.5 rounded-full"><Shield className="w-3 h-3" />Member</span>
                       : <span className="text-[10px] font-bold text-gray-500 bg-gray-100 dark:bg-white/10 px-2 py-0.5 rounded-full">Guest</span>}
-                  {m.role !== 'Owner' && (
+                  {m.role !== 'Owner' && isSpaceOwner && (
                     <button onClick={() => handleRemoveMember(m.userId, m.user?.displayName)}
                       className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors" title="Remove">
                       <X className="w-3.5 h-3.5" />
@@ -1511,8 +1528,8 @@ const ProjectView = () => {
             ))}
           </div>
 
-          {/* ── Pending invitations ── */}
-          {pendingInvitations.length > 0 && (
+          {/* ── Pending invitations (owner only) ── */}
+          {isSpaceOwner && pendingInvitations.length > 0 && (
             <div className="space-y-1.5">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">รอยืนยัน ({pendingInvitations.length})</p>
               {pendingInvitations.map(inv => (
@@ -1533,8 +1550,8 @@ const ProjectView = () => {
             </div>
           )}
 
-          {/* ── Invite by email ── */}
-          <div className="border-t border-gray-200 dark:border-white/10 pt-4">
+          {/* ── Invite by email (owner only) ── */}
+          {isSpaceOwner && <div className="border-t border-gray-200 dark:border-white/10 pt-4">
             <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
               <UserPlus className="w-4 h-4 text-blue-500" /> เชิญด้วย Email
             </p>
@@ -1563,8 +1580,10 @@ const ProjectView = () => {
               </div>
               <p className="text-xs text-gray-400">ระบบจะส่งลิงก์ยืนยันไปที่ email นั้น · หมดอายุใน 7 วัน</p>
             </form>
-          </div>
+          </div>}
         </div>
+          );
+        })()}
       </Modal>
 
       {/* Move Project Modal */}
