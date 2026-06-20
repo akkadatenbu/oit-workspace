@@ -1318,10 +1318,14 @@ const ProjectView = () => {
                 <div className="flex items-center">
                   <Paperclip className="w-4 h-4 mr-2 text-gray-400" /> Attachments
                 </div>
-                <button onClick={() => fileInputRef.current?.click()} className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline">
-                  + Add File
-                </button>
-                <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
+                {(user?.systemRole === 'Admin' || user?.canUploadFiles) && (
+                  <>
+                    <button onClick={() => fileInputRef.current?.click()} className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                      + Add File
+                    </button>
+                    <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
+                  </>
+                )}
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                 {selectedTask.attachments?.map((att: any) => (

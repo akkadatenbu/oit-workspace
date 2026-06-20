@@ -48,6 +48,23 @@ const AdminPanel = () => {
 
   useEffect(() => { fetchAll(); }, []);
 
+  const handleToggleUpload = async (userId: number, displayName: string, canUpload: boolean) => {
+    const action = canUpload ? 'ปิด' : 'เปิด';
+    const { isConfirmed } = await Swal.fire({
+      title: `${action}สิทธิ์แนบไฟล์ของ "${displayName}"?`,
+      icon: 'question', showCancelButton: true,
+      confirmButtonText: action
+    });
+    if (!isConfirmed) return;
+    try {
+      await apiClient.patch(`/admin/users/${userId}/upload-permission`);
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, canUploadFiles: !u.canUploadFiles } : u));
+      Swal.fire({ icon: 'success', title: `${action}สิทธิ์แล้ว`, timer: 1500, showConfirmButton: false });
+    } catch {
+      Swal.fire('Error', 'Failed', 'error');
+    }
+  };
+
   const handleToggleStatus = async (userId: number, displayName: string, isActive: boolean) => {
     const action = isActive ? 'ระงับ' : 'เปิดใช้งาน';
     const { isConfirmed } = await Swal.fire({
@@ -279,6 +296,17 @@ const AdminPanel = () => {
                               }`}
                             >
                               {u.isActive ? 'Suspend' : 'Activate'}
+                            </button>
+                            <button
+                              onClick={() => handleToggleUpload(u.id, u.displayName, u.canUploadFiles)}
+                              title={u.canUploadFiles ? 'ปิดสิทธิ์แนบไฟล์' : 'เปิดสิทธิ์แนบไฟล์'}
+                              className={`px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                                u.canUploadFiles
+                                  ? 'text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10'
+                                  : 'text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5'
+                              }`}
+                            >
+                              {u.canUploadFiles ? '📎 ปิด' : '📎 เปิด'}
                             </button>
                           </div>
                         </td>

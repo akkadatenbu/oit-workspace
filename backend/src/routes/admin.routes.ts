@@ -47,7 +47,7 @@ router.get('/users', isAuthenticated, isAdmin, async (req, res) => {
       orderBy: { createdAt: 'desc' },
       select: {
         id: true, email: true, displayName: true, avatarUrl: true,
-        systemRole: true, isActive: true, createdAt: true,
+        systemRole: true, isActive: true, canUploadFiles: true, createdAt: true,
         _count: {
           select: {
             createdTasks: true,
@@ -80,6 +80,22 @@ router.patch('/users/:id/status', isAuthenticated, isAdmin, async (req, res) => 
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: 'Failed to update user status' });
+  }
+});
+
+// Toggle สิทธิ์แนบไฟล์
+router.patch('/users/:id/upload-permission', isAuthenticated, isAdmin, async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: Number(req.params.id) } });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    const updated = await prisma.user.update({
+      where: { id: Number(req.params.id) },
+      data: { canUploadFiles: !user.canUploadFiles },
+      select: { id: true, email: true, displayName: true, canUploadFiles: true }
+    });
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update upload permission' });
   }
 });
 

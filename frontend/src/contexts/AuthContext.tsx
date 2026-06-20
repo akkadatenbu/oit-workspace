@@ -8,6 +8,7 @@ export interface User {
   avatarUrl: string | null;
   systemRole: string;
   isActive: boolean;
+  canUploadFiles: boolean;
 }
 
 interface AuthContextType {

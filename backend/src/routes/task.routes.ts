@@ -191,6 +191,11 @@ router.delete('/:id/assignees/:userId', isAuthenticated, async (req, res) => {
 
 // อัปโหลดไฟล์แนบ (Attachment)
 router.post('/:id/attachments', isAuthenticated, upload.single('file'), async (req, res) => {
+  const u = req.user as any;
+  if (u.systemRole !== 'Admin' && !u.canUploadFiles) {
+    if (req.file) require('fs').unlinkSync(req.file.path); // ลบไฟล์ที่ multer บันทึกไปแล้ว
+    return res.status(403).json({ error: 'ไม่มีสิทธิ์แนบไฟล์ กรุณาติดต่อ Admin' });
+  }
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
   }
