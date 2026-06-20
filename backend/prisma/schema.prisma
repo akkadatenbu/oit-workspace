@@ -55,6 +55,7 @@ model User {
   displayName   String
   avatarUrl     String?
   systemRole    Role              @default(Member)
+  isActive      Boolean           @default(true)
   createdAt     DateTime          @default(now())
 
   ownedSpaces      Space[]              @relation("SpaceOwner")

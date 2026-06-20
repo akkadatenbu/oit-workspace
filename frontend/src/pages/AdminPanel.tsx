@@ -48,6 +48,28 @@ const AdminPanel = () => {
 
   useEffect(() => { fetchAll(); }, []);
 
+  const handleToggleStatus = async (userId: number, displayName: string, isActive: boolean) => {
+    const action = isActive ? 'ระงับ' : 'เปิดใช้งาน';
+    const { isConfirmed } = await Swal.fire({
+      title: `${action} "${displayName}"?`,
+      text: isActive
+        ? 'user จะไม่สามารถ login เข้าระบบได้จนกว่าจะเปิดใช้งานอีกครั้ง'
+        : 'user จะสามารถ login เข้าระบบได้อีกครั้ง',
+      icon: isActive ? 'warning' : 'question',
+      showCancelButton: true,
+      confirmButtonColor: isActive ? '#ef4444' : '#3b82f6',
+      confirmButtonText: action
+    });
+    if (!isConfirmed) return;
+    try {
+      await apiClient.patch(`/admin/users/${userId}/status`);
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, isActive: !u.isActive } : u));
+      Swal.fire({ icon: 'success', title: `${action}แล้ว`, timer: 1500, showConfirmButton: false });
+    } catch (err: any) {
+      Swal.fire('Error', err.response?.data?.error || 'Failed', 'error');
+    }
+  };
+
   const handleChangeRole = async (userId: number, displayName: string, currentRole: string) => {
     const { value: newRole } = await Swal.fire({
       title: `เปลี่ยน Role ของ "${displayName}"`,
@@ -227,17 +249,38 @@ const AdminPanel = () => {
                             </div>
                           </div>
                         </td>
-                        <td className="px-5 py-3">{roleBadge(u.systemRole)}</td>
+                        <td className="px-5 py-3">
+                          <div className="flex items-center gap-2">
+                            {roleBadge(u.systemRole)}
+                            {!u.isActive && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400 border border-red-200 dark:border-red-500/20">
+                                Suspended
+                              </span>
+                            )}
+                          </div>
+                        </td>
                         <td className="px-5 py-3 text-sm text-gray-600 dark:text-gray-400">{u._count?.createdTasks ?? 0}</td>
                         <td className="px-5 py-3 text-sm text-gray-600 dark:text-gray-400">{u._count?.projects ?? 0}</td>
                         <td className="px-5 py-3 text-xs text-gray-500">{new Date(u.createdAt).toLocaleDateString('th-TH')}</td>
                         <td className="px-5 py-3">
-                          <button
-                            onClick={() => handleChangeRole(u.id, u.displayName, u.systemRole)}
-                            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors"
-                          >
-                            เปลี่ยน Role <ChevronDown className="w-3 h-3" />
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleChangeRole(u.id, u.displayName, u.systemRole)}
+                              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors"
+                            >
+                              Role <ChevronDown className="w-3 h-3" />
+                            </button>
+                            <button
+                              onClick={() => handleToggleStatus(u.id, u.displayName, u.isActive)}
+                              className={`px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                                u.isActive
+                                  ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10'
+                                  : 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-500/10'
+                              }`}
+                            >
+                              {u.isActive ? 'Suspend' : 'Activate'}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

@@ -8,6 +8,8 @@ import MyTasks from './pages/MyTasks';
 import ConfirmInvitation from './pages/ConfirmInvitation';
 import AdminPanel from './pages/AdminPanel';
 import Members from './pages/Members';
+import Help from './pages/Help';
+import PendingActivation from './pages/PendingActivation';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
@@ -41,6 +43,10 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/login" replace />;
   }
 
+  if (!user.isActive) {
+    return <Navigate to="/pending" replace />;
+  }
+
   return <>{children}</>;
 };
 
@@ -51,6 +57,7 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/pending" element={<PendingActivation />} />
             <Route path="/confirm-invitation/:token" element={<ConfirmInvitation />} />
             
             <Route path="/" element={
@@ -64,6 +71,7 @@ function App() {
               <Route path="tasks" element={<MyTasks />} />
               <Route path="admin" element={<AdminPanel />} />
               <Route path="members" element={<Members />} />
+              <Route path="help" element={<Help />} />
             </Route>
           </Routes>
         </BrowserRouter>

@@ -47,7 +47,7 @@ router.get('/users', isAuthenticated, isAdmin, async (req, res) => {
       orderBy: { createdAt: 'desc' },
       select: {
         id: true, email: true, displayName: true, avatarUrl: true,
-        systemRole: true, createdAt: true,
+        systemRole: true, isActive: true, createdAt: true,
         _count: {
           select: {
             createdTasks: true,
@@ -60,6 +60,26 @@ router.get('/users', isAuthenticated, isAdmin, async (req, res) => {
     res.json(users);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
+// Suspend / Activate user
+router.patch('/users/:id/status', isAuthenticated, isAdmin, async (req, res) => {
+  const targetId = Number(req.params.id);
+  if (targetId === (req.user as any).id) {
+    return res.status(400).json({ error: 'Cannot suspend yourself' });
+  }
+  try {
+    const user = await prisma.user.findUnique({ where: { id: targetId } });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    const updated = await prisma.user.update({
+      where: { id: targetId },
+      data: { isActive: !user.isActive },
+      select: { id: true, email: true, displayName: true, isActive: true }
+    });
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update user status' });
   }
 });
 

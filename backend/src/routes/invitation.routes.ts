@@ -206,6 +206,12 @@ router.post('/invitations/:token/confirm', isAuthenticated, async (req, res) => 
       return res.status(403).json({ error: `This invitation was sent to ${inv.email}` });
     }
 
+    // เปิดใช้งาน account ถ้ายังไม่ active (user ใหม่ที่เพิ่ง accept invitation)
+    await prisma.user.update({
+      where: { id: userId },
+      data: { isActive: true }
+    });
+
     if (inv.spaceId) {
       // Space-level invitation → add as SpaceMember + auto-add to all projects in space
       await prisma.spaceMember.upsert({

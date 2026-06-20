@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Bell, Search, Sun, Moon, Menu, Layers, X, CheckSquare, Clock } from 'lucide-react';
+import { Bell, Search, Sun, Moon, Menu, Layers, X, CheckSquare, Clock, HelpCircle } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { apiClient } from '../api/client';
 
 interface NavbarProps {
@@ -213,6 +213,15 @@ const Navbar = ({ toggleSidebar }: NavbarProps) => {
         >
           {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
         </button>
+
+        {/* Help */}
+        <Link
+          to="/help"
+          className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/5 text-gray-500 dark:text-gray-400 transition-colors"
+          title="คู่มือการใช้งาน"
+        >
+          <HelpCircle className="w-5 h-5" />
+        </Link>
 
         {/* Notifications */}
         <div ref={notifRef} className="relative">

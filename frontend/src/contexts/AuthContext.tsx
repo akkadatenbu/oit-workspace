@@ -7,6 +7,7 @@ export interface User {
   displayName: string | null;
   avatarUrl: string | null;
   systemRole: string;
+  isActive: boolean;
 }
 
 interface AuthContextType {

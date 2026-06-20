@@ -33,17 +33,25 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
           let user = await prisma.user.findUnique({ where: { email } });
 
           if (!user) {
-            // Check domain for default role
+            // ผู้ใช้ใหม่ที่ยังไม่ถูกเชิญ → สร้าง account แต่ isActive=false (รอ invite/admin)
             const domain = email.split('@')[1];
             const role = domain === 'northbkk.ac.th' ? 'Member' : 'Guest';
-
             user = await prisma.user.create({
               data: {
                 email,
                 displayName: profile.displayName,
                 avatarUrl: profile.photos?.[0].value,
                 systemRole: role,
+                isActive: false,
               },
+            });
+          }
+
+          // อัปเดต avatar เสมอ (อาจเปลี่ยนรูป Google)
+          if (user.isActive) {
+            await prisma.user.update({
+              where: { id: user.id },
+              data: { avatarUrl: profile.photos?.[0].value }
             });
           }
 
