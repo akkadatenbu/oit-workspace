@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import {
   LayoutDashboard, Layers, CheckSquare, Users, Crown,
-  Kanban, List, Plus, Paperclip, MessageSquare, Bell,
-  Search, Mail, Shield, ChevronDown, ChevronRight,
-  Clock, Timer, BarChart2, FileDown, UserPlus, Building2
+  List, Bell, Search, ChevronDown, ChevronRight, Building2
 } from 'lucide-react';
 
 interface Section {
