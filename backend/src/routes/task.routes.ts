@@ -25,6 +25,7 @@ router.get('/', isAuthenticated, async (req, res) => {
     const tasks = await prisma.task.findMany({
       where: {
         parentTaskId: null,
+        isArchived: false,
         OR: [
           { createdById: (req.user as any).id },
           { assignees: { some: { userId: (req.user as any).id } } }
