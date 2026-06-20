@@ -469,7 +469,7 @@ const ProjectView = () => {
       <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 space-y-4 md:space-y-0 shrink-0">
         <div>
           <div className="flex items-center space-x-3 mb-1">
-            <span className="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-500/10 px-2 py-1 rounded-md">Development Space</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-500/10 px-2 py-1 rounded-md">{project?.space?.name}</span>
           </div>
           <div className="flex items-center space-x-3">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">{project?.name}</h2>
