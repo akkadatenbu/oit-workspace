@@ -118,7 +118,7 @@ const Navbar = ({ toggleSidebar }: NavbarProps) => {
   // ── Export .docx ───────────────────────────────────────────
   const handleExportDocx = async () => {
     if (!aiResult) return;
-    const { Document, Paragraph, TextRun, HeadingLevel, Packer, AlignmentType, BorderStyle, Table, TableCell, TableRow, WidthType } = await import('docx');
+    const { Document, Paragraph, TextRun, HeadingLevel, Packer, AlignmentType, BorderStyle } = await import('docx');
     const { saveAs } = await import('file-saver');
 
     const thFont = 'TH Sarabun New';
