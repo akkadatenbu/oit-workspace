@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Bell, Search, Sun, Moon, Menu, Layers, X, CheckSquare, Clock, HelpCircle, Sparkles, KeyRound, Loader2 } from 'lucide-react';
+import { Bell, Search, Sun, Moon, Menu, Layers, X, CheckSquare, Clock, HelpCircle, Sparkles, KeyRound, Loader2, FileDown } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
@@ -113,6 +113,78 @@ const Navbar = ({ toggleSidebar }: NavbarProps) => {
       setAiKeySaved(true);
       setTimeout(() => setAiKeySaved(false), 2000);
     } catch { /* silent */ }
+  };
+
+  // ── Export .docx ───────────────────────────────────────────
+  const handleExportDocx = async () => {
+    if (!aiResult) return;
+    const { Document, Paragraph, TextRun, HeadingLevel, Packer, AlignmentType, BorderStyle, Table, TableCell, TableRow, WidthType } = await import('docx');
+    const { saveAs } = await import('file-saver');
+
+    const thFont = 'TH Sarabun New';
+    const dateStr = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    // parse markdown sections
+    const lines = aiResult.split('\n');
+    const children: any[] = [];
+
+    // Title
+    children.push(
+      new Paragraph({
+        children: [new TextRun({ text: 'รายงานวิเคราะห์งาน — OIT WorkSpace', bold: true, size: 36, font: thFont, color: '3B82F6' })],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 200 },
+      }),
+      new Paragraph({
+        children: [new TextRun({ text: `วันที่: ${dateStr}`, size: 22, font: thFont, color: '6B7280' })],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 400 },
+      }),
+    );
+
+    for (const line of lines) {
+      if (line.startsWith('## ')) {
+        children.push(new Paragraph({
+          heading: HeadingLevel.HEADING_2,
+          children: [new TextRun({ text: line.replace('## ', ''), bold: true, size: 28, font: thFont, color: '1E40AF' })],
+          spacing: { before: 300, after: 120 },
+          border: { bottom: { style: BorderStyle.SINGLE, size: 1, color: 'BFDBFE' } },
+        }));
+      } else if (line.startsWith('- ') || line.startsWith('• ')) {
+        children.push(new Paragraph({
+          children: [new TextRun({ text: `• ${line.replace(/^[-•] /, '')}`, size: 22, font: thFont })],
+          indent: { left: 360 },
+          spacing: { after: 60 },
+        }));
+      } else if (line.trim() !== '') {
+        children.push(new Paragraph({
+          children: [new TextRun({ text: line, size: 22, font: thFont })],
+          spacing: { after: 80 },
+        }));
+      }
+    }
+
+    // Footer
+    children.push(
+      new Paragraph({ spacing: { before: 400 } }),
+      new Paragraph({
+        children: [new TextRun({ text: `สร้างโดย OIT WorkSpace AI (${aiProvider === 'openrouter' ? 'OpenRouter' : 'Groq'}) — มหาวิทยาลัยนอร์ท-เชียงใหม่`, size: 18, font: thFont, color: '9CA3AF', italics: true })],
+        alignment: AlignmentType.CENTER,
+      }),
+    );
+
+    const doc = new Document({
+      styles: {
+        default: {
+          document: { run: { font: thFont, size: 22 } },
+        },
+      },
+      sections: [{ properties: {}, children }],
+    });
+
+    const blob = await Packer.toBlob(doc);
+    const fileName = `ai-analysis-${new Date().toISOString().split('T')[0]}.docx`;
+    saveAs(blob, fileName);
   };
 
   // ── AI analyze ─────────────────────────────────────────────
@@ -382,18 +454,31 @@ const Navbar = ({ toggleSidebar }: NavbarProps) => {
 
               {/* Result */}
               {aiResult && (
-                <div className="flex-1 overflow-y-auto custom-scrollbar px-4 pb-4">
-                  <div className="prose prose-sm dark:prose-invert max-w-none">
-                    {aiResult.split('\n').map((line, i) => {
-                      if (line.startsWith('## ')) {
-                        return <h3 key={i} className="text-sm font-bold text-gray-900 dark:text-white mt-4 mb-2 first:mt-0 flex items-center gap-1">{line.replace('## ', '')}</h3>;
-                      }
-                      if (line.startsWith('- ') || line.startsWith('• ')) {
-                        return <p key={i} className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed pl-3 border-l-2 border-purple-200 dark:border-purple-500/30 my-1">{line.replace(/^[-•] /, '')}</p>;
-                      }
-                      if (line.trim() === '') return <div key={i} className="h-1" />;
-                      return <p key={i} className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed my-1">{line}</p>;
-                    })}
+                <div className="flex flex-col flex-1 min-h-0">
+                  <div className="flex-1 overflow-y-auto custom-scrollbar px-4 pt-2 pb-2">
+                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                      {aiResult.split('\n').map((line, i) => {
+                        if (line.startsWith('## ')) {
+                          return <h3 key={i} className="text-sm font-bold text-blue-700 dark:text-blue-300 mt-4 mb-1.5 first:mt-0 pb-1 border-b border-blue-100 dark:border-blue-500/20">{line.replace('## ', '')}</h3>;
+                        }
+                        if (line.startsWith('- ') || line.startsWith('• ')) {
+                          return <p key={i} className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed pl-3 border-l-2 border-purple-200 dark:border-purple-500/30 my-0.5">{line.replace(/^[-•] /, '')}</p>;
+                        }
+                        if (line.trim() === '') return <div key={i} className="h-1.5" />;
+                        return <p key={i} className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed my-0.5">{line}</p>;
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Export button */}
+                  <div className="px-4 py-2.5 border-t border-gray-100 dark:border-white/5 shrink-0">
+                    <button
+                      onClick={handleExportDocx}
+                      className="w-full flex items-center justify-center gap-2 py-2 text-xs font-medium text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 rounded-xl hover:bg-green-100 dark:hover:bg-green-500/20 transition-colors"
+                    >
+                      <FileDown className="w-3.5 h-3.5" />
+                      บันทึกเป็นไฟล์ .docx (Word)
+                    </button>
                   </div>
                 </div>
               )}
