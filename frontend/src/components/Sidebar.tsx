@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, CheckSquare, LogOut, ChevronLeft, ChevronRight, Plus, Layers, Folder, Pencil, Trash2, Building2, Crown, Users, X, Shield } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, LogOut, ChevronLeft, ChevronRight, Plus, Layers, Folder, Pencil, Trash2, Building2, Crown, Users, X, Shield, ArrowUpDown } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { apiClient } from '../api/client';
@@ -27,6 +27,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
   const [newFolderName, setNewFolderName] = useState('');
   const [expandedFolders, setExpandedFolders] = useState<Record<number, boolean>>({});
 
+  const [spaceSortDir, setSpaceSortDir] = useState<'asc' | 'desc'>('asc');
   const [isSpaceModalOpen, setIsSpaceModalOpen] = useState(false);
   const [newSpaceName, setNewSpaceName] = useState('');
   const [newSpaceDescription, setNewSpaceDescription] = useState('');
@@ -275,13 +276,22 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
 
             {/* New Workspace button */}
             {isOpen ? (
-              <button
-                onClick={() => setIsSpaceModalOpen(true)}
-                className="w-full flex items-center space-x-2 px-3 py-1.5 mb-2 text-xs font-semibold text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors border border-dashed border-gray-200 dark:border-white/10"
-              >
-                <Building2 className="w-3.5 h-3.5 shrink-0" />
-                <span>New Workspace</span>
-              </button>
+              <div className="flex items-center gap-1 mb-2">
+                <button
+                  onClick={() => setIsSpaceModalOpen(true)}
+                  className="flex-1 flex items-center space-x-2 px-3 py-1.5 text-xs font-semibold text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors border border-dashed border-gray-200 dark:border-white/10"
+                >
+                  <Building2 className="w-3.5 h-3.5 shrink-0" />
+                  <span>New Workspace</span>
+                </button>
+                <button
+                  onClick={() => setSpaceSortDir(d => d === 'asc' ? 'desc' : 'asc')}
+                  title={spaceSortDir === 'asc' ? 'เรียง A→Z (คลิกเพื่อ Z→A)' : 'เรียง Z→A (คลิกเพื่อ A→Z)'}
+                  className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors border border-dashed border-gray-200 dark:border-white/10 shrink-0"
+                >
+                  <ArrowUpDown className="w-3.5 h-3.5" />
+                </button>
+              </div>
             ) : (
               <button
                 onClick={() => setIsSpaceModalOpen(true)}
@@ -292,7 +302,10 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
               </button>
             )}
 
-            {spaces.map(space => (
+            {[...spaces].sort((a, b) => spaceSortDir === 'asc'
+              ? a.name.localeCompare(b.name, 'th')
+              : b.name.localeCompare(a.name, 'th')
+            ).map(space => (
               <div key={space.id} className="mb-3">
                 {isOpen ? (
                   <div className="flex items-center justify-between px-3 mb-1 group/space">
