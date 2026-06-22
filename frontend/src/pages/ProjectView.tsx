@@ -353,6 +353,29 @@ const ProjectView = () => {
     }
   };
 
+  const handleMoveSubtask = async (subtaskId: number, direction: 'up' | 'down') => {
+    const subs = [...(selectedTask.subTasks || [])].sort(
+      (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
+    );
+    const idx = subs.findIndex((s: any) => s.id === subtaskId);
+    if (direction === 'up'   && idx === 0)              return;
+    if (direction === 'down' && idx === subs.length - 1) return;
+
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    [subs[idx], subs[swapIdx]] = [subs[swapIdx], subs[idx]];
+    subs.forEach((s: any, i: number) => { s.sortOrder = i; });
+
+    const updatedTask = { ...selectedTask, subTasks: [...subs] };
+    setSelectedTask(updatedTask);
+    setTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
+
+    try {
+      await apiClient.patch('/tasks/subtasks/reorder', { order: subs.map((s: any) => s.id) });
+    } catch {
+      // revert on error by reloading
+    }
+  };
+
   const handleAddSubtask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSubtaskTitle.trim() || !selectedTask) return;
@@ -1258,10 +1281,22 @@ const ProjectView = () => {
                 <CheckSquare className="w-4 h-4 mr-2 text-gray-400" /> Subtasks
               </h4>
               <div className="space-y-1 mb-1.5">
-                {selectedTask.subTasks?.map((sub: any) => {
+                {([...(selectedTask.subTasks || [])].sort((a: any, b: any) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))).map((sub: any, subIdx: number) => {
+                  const sortedSubs = [...(selectedTask.subTasks || [])].sort((a: any, b: any) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
                   const isOverdue = sub.dueDate && new Date(sub.dueDate) < new Date() && sub.status !== 'Done';
                   return (
-                  <div key={sub.id} className="flex items-center gap-2 px-2.5 py-1 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-200 dark:border-white/5 group hover:border-blue-300 transition-colors">
+                  <div key={sub.id} className="flex items-center gap-1.5 px-2 py-1 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-200 dark:border-white/5 group hover:border-blue-300 transition-colors">
+                    {/* ↑↓ reorder */}
+                    <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                      <button type="button" onClick={() => handleMoveSubtask(sub.id, 'up')} disabled={subIdx === 0}
+                        className="p-0.5 text-gray-400 hover:text-blue-500 disabled:opacity-20 disabled:cursor-not-allowed transition-colors">
+                        <ChevronUp className="w-3 h-3" />
+                      </button>
+                      <button type="button" onClick={() => handleMoveSubtask(sub.id, 'down')} disabled={subIdx === sortedSubs.length - 1}
+                        className="p-0.5 text-gray-400 hover:text-blue-500 disabled:opacity-20 disabled:cursor-not-allowed transition-colors">
+                        <ChevronDown className="w-3 h-3" />
+                      </button>
+                    </div>
                     <input
                       type="checkbox"
                       checked={sub.status === 'Done'}

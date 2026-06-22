@@ -35,7 +35,10 @@ router.get('/:id', isAuthenticated, async (req, res) => {
           where: (req.query.showArchived === 'true') ? {} : { isArchived: false },
           include: {
             assignees: { include: { user: true } },
-            subTasks: { include: { assignees: { include: { user: true } } } },
+            subTasks: {
+              include: { assignees: { include: { user: true } } },
+              orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }]
+            },
             attachments: true,
             links: true,
             comments: { include: { user: true }, orderBy: { createdAt: 'desc' } }

@@ -124,6 +124,22 @@ router.patch('/:id', isAuthenticated, async (req, res) => {
   }
 });
 
+// เรียงลำดับ Subtasks ใหม่
+router.patch('/subtasks/reorder', isAuthenticated, async (req, res) => {
+  const { order } = req.body; // array of subtask IDs in desired order
+  if (!Array.isArray(order)) return res.status(400).json({ error: 'order must be array' });
+  try {
+    await Promise.all(
+      order.map((id: number, index: number) =>
+        prisma.task.update({ where: { id: Number(id) }, data: { sortOrder: index } })
+      )
+    );
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to reorder subtasks' });
+  }
+});
+
 // Archive / Unarchive Task
 router.patch('/:id/archive', isAuthenticated, async (req, res) => {
   try {

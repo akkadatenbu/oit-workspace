@@ -159,6 +159,7 @@ model Task {
   progressPercent Int       @default(0)
   dueDate         DateTime?
   timeEstimate    String?
+  sortOrder       Int               @default(0)
   isArchived      Boolean           @default(false)
   createdById     Int
   createdAt       DateTime  @default(now())
