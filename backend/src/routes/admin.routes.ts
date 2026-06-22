@@ -114,6 +114,36 @@ router.patch('/users/:id/upload-permission', isAuthenticated, isAdmin, async (re
   }
 });
 
+// ลบ User ออกจากระบบ
+router.delete('/users/:id', isAuthenticated, isAdmin, async (req, res) => {
+  const targetId = Number(req.params.id);
+  const adminId  = (req.user as any).id;
+
+  if (targetId === adminId) {
+    return res.status(400).json({ error: 'ไม่สามารถลบตัวเองได้' });
+  }
+  try {
+    // 1. Reassign tasks, links, attachments ที่สร้างโดย user นี้ ไปให้ admin
+    await prisma.task.updateMany({ where: { createdById: targetId }, data: { createdById: adminId } });
+    await prisma.taskLink.updateMany({ where: { createdById: targetId }, data: { createdById: adminId } });
+    await prisma.taskAttachment.updateMany({ where: { uploadedById: targetId }, data: { uploadedById: adminId } });
+
+    // 2. ลบ comments ของ user
+    await prisma.taskComment.deleteMany({ where: { userId: targetId } });
+
+    // 3. ลบ invitations ที่ user นี้ส่งออกไป
+    await prisma.projectInvitation.deleteMany({ where: { invitedById: targetId } });
+
+    // 4. ลบ user (cascade: ProjectMember, SpaceMember, TaskAssignee, Notification, Space.ownerId=SetNull)
+    await prisma.user.delete({ where: { id: targetId } });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('[admin delete user]', error);
+    res.status(500).json({ error: 'Failed to delete user' });
+  }
+});
+
 // เปลี่ยน role
 router.patch('/users/:id/role', isAuthenticated, isAdmin, async (req, res) => {
   const { role } = req.body;

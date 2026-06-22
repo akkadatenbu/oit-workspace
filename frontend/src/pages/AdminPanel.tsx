@@ -96,6 +96,34 @@ const AdminPanel = () => {
     }
   };
 
+  const handleDeleteUser = async (userId: number, displayName: string) => {
+    const { isConfirmed } = await Swal.fire({
+      title: `ลบ "${displayName}" ออกจากระบบ?`,
+      html: `
+        <p class="text-sm text-gray-600 mb-2">การลบจะส่งผลดังนี้:</p>
+        <ul class="text-sm text-left text-gray-600 space-y-1">
+          <li>• Task ที่สร้างไว้จะถูก reassign ให้ Admin</li>
+          <li>• Comments ทั้งหมดจะถูกลบ</li>
+          <li>• ถูกลบออกจากทุก Project และ Workspace</li>
+        </ul>
+        <p class="text-sm text-red-600 mt-2 font-medium">ไม่สามารถย้อนกลับได้</p>
+      `,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      confirmButtonText: 'ลบออกจากระบบ',
+      cancelButtonText: 'ยกเลิก',
+    });
+    if (!isConfirmed) return;
+    try {
+      await apiClient.delete(`/admin/users/${userId}`);
+      setUsers(prev => prev.filter(u => u.id !== userId));
+      Swal.fire({ icon: 'success', title: 'ลบแล้ว', timer: 1500, showConfirmButton: false });
+    } catch (err: any) {
+      Swal.fire('Error', err.response?.data?.error || 'Failed to delete user', 'error');
+    }
+  };
+
   const handleToggleUpload = async (userId: number, displayName: string, canUpload: boolean) => {
     const action = canUpload ? 'ปิด' : 'เปิด';
     const { isConfirmed } = await Swal.fire({
@@ -362,6 +390,13 @@ const AdminPanel = () => {
                               }`}
                             >
                               {u.canUploadFiles ? '📎 ปิด' : '📎 เปิด'}
+                            </button>
+                            <button
+                              onClick={() => handleDeleteUser(u.id, u.displayName)}
+                              className="px-2.5 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                              title="ลบออกจากระบบ"
+                            >
+                              ลบ
                             </button>
                           </div>
                         </td>

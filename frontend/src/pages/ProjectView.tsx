@@ -1341,33 +1341,6 @@ const ProjectView = () => {
                       onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
                       className={`flex-1 min-w-0 text-sm bg-transparent border-b border-transparent hover:border-gray-300 dark:hover:border-white/20 focus:border-blue-400 focus:outline-none px-0.5 py-0 transition-colors ${sub.status === 'Done' ? 'text-gray-400 line-through' : 'text-gray-700 dark:text-gray-300'}`}
                     />
-                    {/* Time estimate — แก้ไขได้ inline */}
-                    <div className="flex items-center gap-0.5 shrink-0">
-                      <Timer className="w-3 h-3 text-purple-400 shrink-0" />
-                      <input
-                        key={`est-${sub.id}`}
-                        type="text"
-                        defaultValue={sub.timeEstimate || ''}
-                        placeholder="est."
-                        onBlur={async (e) => {
-                          const newEst = e.target.value.trim();
-                          if (newEst === (sub.timeEstimate || '')) return;
-                          try {
-                            await apiClient.patch(`/tasks/${sub.id}`, { timeEstimate: newEst || null });
-                            const updatedSubTasks = selectedTask.subTasks.map((s:any) =>
-                              s.id === sub.id ? { ...s, timeEstimate: newEst || null } : s
-                            );
-                            const updatedTask = { ...selectedTask, subTasks: updatedSubTasks };
-                            setSelectedTask(updatedTask);
-                            setTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
-                          } catch (err) {
-                            Swal.fire('Error', 'Failed to update estimate', 'error');
-                          }
-                        }}
-                        onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-                        className="w-14 text-[10px] bg-transparent border-b border-transparent hover:border-purple-300 dark:hover:border-purple-500/40 focus:border-purple-400 focus:outline-none text-purple-600 dark:text-purple-400 placeholder-gray-300 dark:placeholder-gray-600 px-0.5 py-0 transition-colors"
-                      />
-                    </div>
                     {/* Subtask Assignees */}
                     <div className="flex items-center gap-0.5 shrink-0 relative" onClick={e => e.stopPropagation()}>
                       {sub.assignees?.map((a: any) => (
@@ -1441,6 +1414,34 @@ const ProjectView = () => {
                           </div>
                         )}
                       </div>
+                    </div>
+
+                    {/* Time estimate — แก้ไขได้ inline */}
+                    <div className="flex items-center gap-0.5 shrink-0">
+                      <Timer className="w-3 h-3 text-purple-400 shrink-0" />
+                      <input
+                        key={`est-${sub.id}`}
+                        type="text"
+                        defaultValue={sub.timeEstimate || ''}
+                        placeholder="est."
+                        onBlur={async (e) => {
+                          const newEst = e.target.value.trim();
+                          if (newEst === (sub.timeEstimate || '')) return;
+                          try {
+                            await apiClient.patch(`/tasks/${sub.id}`, { timeEstimate: newEst || null });
+                            const updatedSubTasks = selectedTask.subTasks.map((s:any) =>
+                              s.id === sub.id ? { ...s, timeEstimate: newEst || null } : s
+                            );
+                            const updatedTask = { ...selectedTask, subTasks: updatedSubTasks };
+                            setSelectedTask(updatedTask);
+                            setTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
+                          } catch (err) {
+                            Swal.fire('Error', 'Failed to update estimate', 'error');
+                          }
+                        }}
+                        onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                        className="w-14 text-[10px] bg-transparent border-b border-transparent hover:border-purple-300 dark:hover:border-purple-500/40 focus:border-purple-400 focus:outline-none text-purple-600 dark:text-purple-400 placeholder-gray-300 dark:placeholder-gray-600 px-0.5 py-0 transition-colors"
+                      />
                     </div>
 
                     <div className="flex items-center gap-1 shrink-0" title="Due date">
