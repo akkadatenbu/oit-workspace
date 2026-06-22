@@ -838,18 +838,18 @@ const ProjectView = () => {
                         </span>
                       </td>
                       <td className="px-5 py-2">
-                        {task.timeEstimate ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/20 px-2 py-0.5 rounded-md">
-                            <Timer className="w-3 h-3" />{task.timeEstimate}
+                        {task.dueDate ? (
+                          <span className={`text-xs font-medium ${new Date(task.dueDate) < new Date() && task.status !== 'Done' ? 'text-red-600' : 'text-gray-500 dark:text-gray-400'}`}>
+                            {new Date(task.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                           </span>
                         ) : (
                           <span className="text-gray-400 dark:text-gray-600 text-xs">-</span>
                         )}
                       </td>
                       <td className="px-5 py-2">
-                        {task.dueDate ? (
-                          <span className={`text-xs font-medium ${new Date(task.dueDate) < new Date() && task.status !== 'Done' ? 'text-red-600' : 'text-gray-500 dark:text-gray-400'}`}>
-                            {new Date(task.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                        {task.timeEstimate ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/20 px-2 py-0.5 rounded-md">
+                            <Timer className="w-3 h-3" />{task.timeEstimate}
                           </span>
                         ) : (
                           <span className="text-gray-400 dark:text-gray-600 text-xs">-</span>
