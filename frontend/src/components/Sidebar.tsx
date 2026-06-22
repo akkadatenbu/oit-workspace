@@ -276,22 +276,13 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
 
             {/* New Workspace button */}
             {isOpen ? (
-              <div className="flex items-center gap-1 mb-2">
-                <button
-                  onClick={() => setIsSpaceModalOpen(true)}
-                  className="flex-1 flex items-center space-x-2 px-3 py-1.5 text-xs font-semibold text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors border border-dashed border-gray-200 dark:border-white/10"
-                >
-                  <Building2 className="w-3.5 h-3.5 shrink-0" />
-                  <span>New Workspace</span>
-                </button>
-                <button
-                  onClick={() => setSpaceSortDir(d => d === 'asc' ? 'desc' : 'asc')}
-                  title={spaceSortDir === 'asc' ? 'เรียง A→Z (คลิกเพื่อ Z→A)' : 'เรียง Z→A (คลิกเพื่อ A→Z)'}
-                  className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors border border-dashed border-gray-200 dark:border-white/10 shrink-0"
-                >
-                  <ArrowUpDown className="w-3.5 h-3.5" />
-                </button>
-              </div>
+              <button
+                onClick={() => setIsSpaceModalOpen(true)}
+                className="w-full flex items-center space-x-2 px-3 py-1.5 mb-2 text-xs font-semibold text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors border border-dashed border-gray-200 dark:border-white/10"
+              >
+                <Building2 className="w-3.5 h-3.5 shrink-0" />
+                <span>New Workspace</span>
+              </button>
             ) : (
               <button
                 onClick={() => setIsSpaceModalOpen(true)}
@@ -299,6 +290,21 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
                 className="w-10 h-10 flex items-center justify-center rounded-xl text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors mb-2 mx-auto"
               >
                 <Building2 className="w-5 h-5" />
+              </button>
+            )}
+
+            {/* Workspaces section label + sort toggle */}
+            {isOpen && (
+              <button
+                onClick={() => setSpaceSortDir(d => d === 'asc' ? 'desc' : 'asc')}
+                className="w-full flex items-center justify-between px-3 py-1 mb-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors group"
+                title={spaceSortDir === 'asc' ? 'กำลังเรียง A→Z  คลิกเพื่อเรียง Z→A' : 'กำลังเรียง Z→A  คลิกเพื่อเรียง A→Z'}
+              >
+                <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Workspaces</span>
+                <span className="flex items-center gap-1 text-[10px] text-gray-400 dark:text-gray-500 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors">
+                  {spaceSortDir === 'asc' ? 'A→Z' : 'Z→A'}
+                  <ArrowUpDown className="w-3 h-3" />
+                </span>
               </button>
             )}
 
