@@ -82,6 +82,7 @@ model Space {
   name        String
   description String?   @db.Text
   ownerId     Int?
+  sortOrder   Int       @default(0)
   createdAt   DateTime  @default(now())
 
   owner       User?               @relation("SpaceOwner", fields: [ownerId], references: [id], onDelete: SetNull)

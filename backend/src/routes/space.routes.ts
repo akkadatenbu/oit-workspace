@@ -36,6 +36,7 @@ router.get('/', isAuthenticated, async (req, res) => {
 
     const spaces = await prisma.space.findMany({
       where: whereClause,
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
       include: {
         folders: { include: { projects: true } },
         projects: { where: { folderId: null } },
@@ -50,6 +51,22 @@ router.get('/', isAuthenticated, async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to fetch spaces' });
+  }
+});
+
+// เรียงลำดับ Space ใหม่
+router.patch('/reorder', isAuthenticated, async (req, res) => {
+  const { order } = req.body; // array of space IDs in desired order
+  if (!Array.isArray(order)) return res.status(400).json({ error: 'order must be an array' });
+  try {
+    await Promise.all(
+      order.map((id: number, index: number) =>
+        prisma.space.update({ where: { id: Number(id) }, data: { sortOrder: index } })
+      )
+    );
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to reorder spaces' });
   }
 });
 

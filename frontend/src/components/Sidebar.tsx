@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, CheckSquare, LogOut, ChevronLeft, ChevronRight, Plus, Layers, Folder, Pencil, Trash2, Building2, Crown, Users, X, Shield, ArrowUpDown } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, LogOut, ChevronLeft, ChevronRight, Plus, Layers, Folder, Pencil, Trash2, Building2, Crown, Users, X, Shield, ChevronUp, ChevronDown } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { apiClient } from '../api/client';
@@ -27,7 +27,6 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
   const [newFolderName, setNewFolderName] = useState('');
   const [expandedFolders, setExpandedFolders] = useState<Record<number, boolean>>({});
 
-  const [spaceSortDir, setSpaceSortDir] = useState<'asc' | 'desc'>('asc');
   const [isSpaceModalOpen, setIsSpaceModalOpen] = useState(false);
   const [newSpaceName, setNewSpaceName] = useState('');
   const [newSpaceDescription, setNewSpaceDescription] = useState('');
@@ -151,6 +150,25 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
     }
   };
 
+  const handleMoveSpace = async (spaceId: number, direction: 'up' | 'down') => {
+    const sorted = [...spaces].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+    const idx = sorted.findIndex(s => s.id === spaceId);
+    if (direction === 'up' && idx === 0) return;
+    if (direction === 'down' && idx === sorted.length - 1) return;
+
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    [sorted[idx], sorted[swapIdx]] = [sorted[swapIdx], sorted[idx]];
+
+    const order = sorted.map(s => s.id);
+    // optimistic update
+    setSpaces(sorted);
+    try {
+      await apiClient.patch('/spaces/reorder', { order });
+    } catch {
+      fetchSpaces(); // revert on error
+    }
+  };
+
   const handleRenameSpace = async (space: any) => {
     const { value: newName } = await Swal.fire({
       title: 'Rename Workspace',
@@ -219,6 +237,8 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
     { icon: Users,           label: 'Members',     path: '/members' },
     ...(user?.systemRole === 'Admin' ? [{ icon: Crown, label: 'Admin Panel', path: '/admin' }] : []),
   ];
+
+  const sortedSpaces = [...spaces].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
 
   return (
     <>
@@ -293,30 +313,33 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
               </button>
             )}
 
-            {/* Workspaces section label + sort toggle */}
             {isOpen && (
-              <button
-                onClick={() => setSpaceSortDir(d => d === 'asc' ? 'desc' : 'asc')}
-                className="w-full flex items-center justify-between px-3 py-1 mb-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors group"
-                title={spaceSortDir === 'asc' ? 'กำลังเรียง A→Z  คลิกเพื่อเรียง Z→A' : 'กำลังเรียง Z→A  คลิกเพื่อเรียง A→Z'}
-              >
-                <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Workspaces</span>
-                <span className="flex items-center gap-1 text-[10px] text-gray-400 dark:text-gray-500 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors">
-                  {spaceSortDir === 'asc' ? 'A→Z' : 'Z→A'}
-                  <ArrowUpDown className="w-3 h-3" />
-                </span>
-              </button>
+              <p className="px-3 py-1 mb-1 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Workspaces</p>
             )}
 
-            {[...spaces].sort((a, b) => spaceSortDir === 'asc'
-              ? a.name.localeCompare(b.name, 'th')
-              : b.name.localeCompare(a.name, 'th')
-            ).map(space => (
+            {sortedSpaces.map((space, spaceIdx) => (
               <div key={space.id} className="mb-3">
                 {isOpen ? (
                   <div className="flex items-center justify-between px-3 mb-1 group/space">
-                    <span className="text-base font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider truncate max-w-[150px]" title={space.name}>{space.name}</span>
+                    <span className="text-base font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider truncate max-w-[120px]" title={space.name}>{space.name}</span>
                     <div className="flex items-center space-x-0.5 opacity-0 group-hover/space:opacity-100 transition-opacity">
+                      {/* ↑↓ ปุ่มเลื่อนลำดับ */}
+                      <button
+                        onClick={() => handleMoveSpace(space.id, 'up')}
+                        disabled={spaceIdx === 0}
+                        title="เลื่อนขึ้น"
+                        className="text-gray-400 hover:text-blue-500 transition-colors p-1 rounded-md hover:bg-blue-50 dark:hover:bg-blue-500/10 disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        <ChevronUp className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleMoveSpace(space.id, 'down')}
+                        disabled={spaceIdx === sortedSpaces.length - 1}
+                        title="เลื่อนลง"
+                        className="text-gray-400 hover:text-blue-500 transition-colors p-1 rounded-md hover:bg-blue-50 dark:hover:bg-blue-500/10 disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      </button>
                       <button onClick={() => handleOpenTeamModal(space)} title={`Manage Team (${space.members?.length ?? 0})`} className="text-gray-400 hover:text-blue-500 transition-colors p-1 rounded-md hover:bg-blue-50 dark:hover:bg-blue-500/10">
                         <Users className="w-3.5 h-3.5" />
                       </button>
