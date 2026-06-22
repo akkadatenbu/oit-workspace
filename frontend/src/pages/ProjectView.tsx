@@ -83,6 +83,7 @@ const ProjectView = () => {
   const [isUpdatingTask, setIsUpdatingTask] = useState(false);
   const [assigneeSearch, setAssigneeSearch] = useState('');
   const [isAssigneeOpen, setIsAssigneeOpen] = useState(false);
+  const [openSubtaskAssignee, setOpenSubtaskAssignee] = useState<number | null>(null);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [newSubtaskDueDate, setNewSubtaskDueDate] = useState('');
   const [newSubtaskTimeEstimate, setNewSubtaskTimeEstimate] = useState('');
@@ -496,7 +497,23 @@ const ProjectView = () => {
               <Trash2 className="w-5 h-5" />
             </button>
           </div>
-          <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm max-w-2xl">{project?.description || 'No description provided.'}</p>
+          <p
+            contentEditable
+            suppressContentEditableWarning
+            onBlur={async (e) => {
+              const newDesc = e.currentTarget.textContent?.trim() || '';
+              if (newDesc === (project?.description || '')) return;
+              try {
+                await apiClient.patch(`/projects/${id}`, { description: newDesc || null });
+                setProject({ ...project, description: newDesc || null });
+              } catch { /* silent */ }
+            }}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }}
+            className="text-gray-600 dark:text-gray-400 mt-2 text-sm max-w-2xl outline-none border-b border-transparent hover:border-gray-300 dark:hover:border-white/20 focus:border-blue-400 cursor-text transition-colors empty:before:content-[attr(data-placeholder)] empty:before:text-gray-400 dark:empty:before:text-gray-600"
+            data-placeholder="คลิกเพื่อเพิ่มคำอธิบาย..."
+          >
+            {project?.description || ''}
+          </p>
         </div>
         <div className="flex items-center space-x-3">
           {/* Members avatars + manage button */}
@@ -1316,6 +1333,81 @@ const ProjectView = () => {
                         className="w-14 text-[10px] bg-transparent border-b border-transparent hover:border-purple-300 dark:hover:border-purple-500/40 focus:border-purple-400 focus:outline-none text-purple-600 dark:text-purple-400 placeholder-gray-300 dark:placeholder-gray-600 px-0.5 py-0 transition-colors"
                       />
                     </div>
+                    {/* Subtask Assignees */}
+                    <div className="flex items-center gap-0.5 shrink-0 relative" onClick={e => e.stopPropagation()}>
+                      {sub.assignees?.map((a: any) => (
+                        <button
+                          key={a.userId}
+                          type="button"
+                          title={`${a.user?.displayName} — คลิกเพื่อลบออก`}
+                          onClick={async () => {
+                            try {
+                              await apiClient.delete(`/tasks/${sub.id}/assignees/${a.userId}`);
+                              const updatedSubTasks = selectedTask.subTasks.map((s: any) =>
+                                s.id === sub.id ? { ...s, assignees: s.assignees.filter((x: any) => x.userId !== a.userId) } : s
+                              );
+                              const updatedTask = { ...selectedTask, subTasks: updatedSubTasks };
+                              setSelectedTask(updatedTask);
+                              setTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
+                            } catch { Swal.fire('Error', 'Failed to remove assignee', 'error'); }
+                          }}
+                          className="w-5 h-5 rounded-full overflow-hidden border border-white dark:border-[#18181b] hover:ring-2 hover:ring-red-400 transition-all shrink-0"
+                        >
+                          {a.user?.avatarUrl
+                            ? <img src={a.user.avatarUrl} alt="" className="w-full h-full object-cover" />
+                            : <span className="w-full h-full flex items-center justify-center bg-blue-100 text-[8px] font-bold text-blue-600">{a.user?.displayName?.charAt(0)}</span>
+                          }
+                        </button>
+                      ))}
+                      <div className="relative">
+                        <button
+                          type="button"
+                          title="เพิ่มผู้รับผิดชอบ"
+                          onClick={() => setOpenSubtaskAssignee(openSubtaskAssignee === sub.id ? null : sub.id)}
+                          className="w-5 h-5 rounded-full bg-gray-100 dark:bg-white/10 flex items-center justify-center text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors shrink-0"
+                        >
+                          <Users className="w-3 h-3" />
+                        </button>
+                        {openSubtaskAssignee === sub.id && (
+                          <div className="absolute left-0 top-full mt-1 w-44 bg-white dark:bg-[#18181b] rounded-xl border border-gray-200 dark:border-white/10 shadow-xl z-50 overflow-hidden max-h-36 overflow-y-auto custom-scrollbar py-1">
+                            {(project?.members?.map((m: any) => m.user) ?? [])
+                              .filter((u: any) => u && !sub.assignees?.some((a: any) => a.userId === u.id))
+                              .map((u: any) => (
+                                <button
+                                  key={u.id}
+                                  type="button"
+                                  onMouseDown={async () => {
+                                    setOpenSubtaskAssignee(null);
+                                    try {
+                                      const { data } = await apiClient.post(`/tasks/${sub.id}/assignees`, { userId: u.id });
+                                      const updatedSubTasks = selectedTask.subTasks.map((s: any) =>
+                                        s.id === sub.id ? { ...s, assignees: [...(s.assignees || []), data] } : s
+                                      );
+                                      const updatedTask = { ...selectedTask, subTasks: updatedSubTasks };
+                                      setSelectedTask(updatedTask);
+                                      setTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
+                                    } catch { Swal.fire('Error', 'Failed to assign', 'error'); }
+                                  }}
+                                  className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-left"
+                                >
+                                  <div className="w-5 h-5 rounded-full overflow-hidden bg-blue-100 flex items-center justify-center shrink-0">
+                                    {u.avatarUrl
+                                      ? <img src={u.avatarUrl} alt="" className="w-full h-full object-cover" />
+                                      : <span className="text-[8px] font-bold text-blue-600">{u.displayName?.charAt(0)}</span>}
+                                  </div>
+                                  <span className="text-xs text-gray-700 dark:text-gray-300 truncate">{u.displayName}</span>
+                                </button>
+                              ))}
+                            {(project?.members?.map((m: any) => m.user) ?? [])
+                              .filter((u: any) => u && !sub.assignees?.some((a: any) => a.userId === u.id))
+                              .length === 0 && (
+                              <p className="text-xs text-gray-400 text-center py-2">ทุกคนถูก assign แล้ว</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
                     <div className="flex items-center gap-1 shrink-0" title="Due date">
                       <Calendar className={`w-3.5 h-3.5 ${isOverdue ? 'text-red-400' : 'text-gray-400'}`} />
                       <input

@@ -20,6 +20,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
   // Modal State
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
+  const [newProjectDescription, setNewProjectDescription] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [selectedFolderIdForProject, setSelectedFolderIdForProject] = useState<number | null>(null);
 
@@ -69,11 +70,13 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
       const projRes = await apiClient.post('/projects', {
         spaceId,
         folderId: selectedFolderIdForProject,
-        name: newProjectName.trim()
+        name: newProjectName.trim(),
+        description: newProjectDescription.trim() || undefined
       });
       await fetchSpaces();
       setIsProjectModalOpen(false);
       setNewProjectName('');
+      setNewProjectDescription('');
       setSelectedFolderIdForProject(null);
       navigate(`/projects/${projRes.data.id}`);
     } catch (err) {
@@ -177,15 +180,17 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
   const handleMoveSpace = async (spaceId: number, direction: 'up' | 'down') => {
     const sorted = [...spaces].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
     const idx = sorted.findIndex(s => s.id === spaceId);
-    if (direction === 'up' && idx === 0) return;
+    if (direction === 'up'   && idx === 0)               return;
     if (direction === 'down' && idx === sorted.length - 1) return;
 
     const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
     [sorted[idx], sorted[swapIdx]] = [sorted[swapIdx], sorted[idx]];
 
+    // อัปเดต sortOrder ใน objects ด้วย เพื่อให้ optimistic update ถูกต้อง
+    sorted.forEach((s, i) => { s.sortOrder = i; });
+
     const order = sorted.map(s => s.id);
-    // optimistic update
-    setSpaces(sorted);
+    setSpaces([...sorted]); // optimistic update
     try {
       await apiClient.patch('/spaces/reorder', { order });
     } catch {
@@ -356,8 +361,8 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
               <div key={space.id} className="mb-3">
                 {isOpen ? (
                   <div className="flex items-center justify-between px-3 mb-1 group/space">
-                    <span className="text-base font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider truncate max-w-[120px]" title={space.name}>{space.name}</span>
-                    <div className="flex items-center gap-0.5 opacity-0 group-hover/space:opacity-100 transition-opacity shrink-0">
+                    <span className="text-base font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider truncate flex-1 min-w-0" title={space.name}>{space.name}</span>
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover/space:opacity-100 transition-opacity shrink-0 ml-1">
                       {/* ↑↓ */}
                       <button onClick={() => handleMoveSpace(space.id, 'up')} disabled={spaceIdx === 0} title="เลื่อนขึ้น"
                         className="p-1 rounded text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 disabled:opacity-25 disabled:cursor-not-allowed transition-colors">
@@ -520,14 +525,26 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
         <form onSubmit={handleCreateProject} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Project Name</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={newProjectName}
               onChange={(e) => setNewProjectName(e.target.value)}
-              placeholder="e.g., Q3 Marketing Campaign"
-              className="w-full px-4 py-2.5 bg-gray-50 dark:bg-[#121212] border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              placeholder="e.g., ปรับปรุงระบบ IT"
+              className="w-full px-4 py-2.5 bg-gray-50 dark:bg-[#121212] border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm font-normal"
               autoFocus
               required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              คำอธิบาย <span className="text-gray-400 font-normal">(ไม่บังคับ)</span>
+            </label>
+            <textarea
+              value={newProjectDescription}
+              onChange={(e) => setNewProjectDescription(e.target.value)}
+              placeholder="อธิบายวัตถุประสงค์ของโปรเจกต์..."
+              rows={2}
+              className="w-full px-4 py-2.5 bg-gray-50 dark:bg-[#121212] border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm font-normal resize-none"
             />
           </div>
           <div className="flex justify-end space-x-3 pt-4">
