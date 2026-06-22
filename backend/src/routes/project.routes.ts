@@ -107,13 +107,14 @@ router.patch('/:id', isAuthenticated, async (req, res) => {
     if (!await canAccessProject(Number(req.params.id), userId, userIsAdmin(req))) {
       return res.status(403).json({ error: 'Access denied' });
     }
-    const { name, folderId, status } = req.body;
+    const { name, folderId, status, description } = req.body;
     const project = await prisma.project.update({
       where: { id: Number(req.params.id) },
       data: {
-        name:     name     !== undefined ? name     : undefined,
-        folderId: folderId !== undefined ? (folderId === null ? null : Number(folderId)) : undefined,
-        status:   status   !== undefined ? status   : undefined
+        name:        name        !== undefined ? name        : undefined,
+        description: description !== undefined ? (description || null) : undefined,
+        folderId:    folderId    !== undefined ? (folderId === null ? null : Number(folderId)) : undefined,
+        status:      status      !== undefined ? status      : undefined
       }
     });
     res.json(project);
