@@ -1675,11 +1675,35 @@ const ProjectView = () => {
                         <span className="text-xs font-bold text-gray-600 dark:text-gray-400">{comment.user?.displayName?.charAt(0) || 'U'}</span>
                       )}
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 group/comment">
                       <div className="bg-gray-50 dark:bg-white/5 rounded-xl rounded-tl-none p-2.5 border border-gray-100 dark:border-white/5">
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-sm font-semibold text-gray-900 dark:text-gray-200">{comment.user?.displayName || 'Unknown User'}</span>
-                          <span className="text-xs text-gray-500">{new Date(comment.createdAt).toLocaleDateString()} {new Date(comment.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs text-gray-500">{new Date(comment.createdAt).toLocaleDateString()} {new Date(comment.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            {(comment.user?.id === user?.id || user?.systemRole === 'Admin') && (
+                              <button
+                                type="button"
+                                title="ลบ comment"
+                                onClick={async () => {
+                                  try {
+                                    await apiClient.delete(`/tasks/comments/${comment.id}`);
+                                    const updatedTask = {
+                                      ...selectedTask,
+                                      comments: selectedTask.comments.filter((c: any) => c.id !== comment.id)
+                                    };
+                                    setSelectedTask(updatedTask);
+                                    setTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
+                                  } catch {
+                                    Swal.fire('Error', 'Failed to delete comment', 'error');
+                                  }
+                                }}
+                                className="opacity-0 group-hover/comment:opacity-100 p-0.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-all"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
                         </div>
                         <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{comment.text}</p>
                       </div>

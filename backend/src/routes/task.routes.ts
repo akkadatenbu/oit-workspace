@@ -389,4 +389,23 @@ router.post('/:id/comments', isAuthenticated, async (req, res) => {
   }
 });
 
+// ลบ Comment (เฉพาะเจ้าของ comment หรือ Admin)
+router.delete('/comments/:commentId', isAuthenticated, async (req, res) => {
+  const currentUserId = (req.user as any).id;
+  const isAdmin = (req.user as any).systemRole === 'Admin';
+  try {
+    const comment = await prisma.taskComment.findUnique({
+      where: { id: Number(req.params.commentId) }
+    });
+    if (!comment) return res.status(404).json({ error: 'Comment not found' });
+    if (!isAdmin && comment.userId !== currentUserId) {
+      return res.status(403).json({ error: 'Can only delete your own comments' });
+    }
+    await prisma.taskComment.delete({ where: { id: Number(req.params.commentId) } });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete comment' });
+  }
+});
+
 export default router;
