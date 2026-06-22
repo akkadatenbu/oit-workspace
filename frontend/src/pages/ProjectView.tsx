@@ -1675,7 +1675,7 @@ const ProjectView = () => {
                         <span className="text-xs font-bold text-gray-600 dark:text-gray-400">{comment.user?.displayName?.charAt(0) || 'U'}</span>
                       )}
                     </div>
-                    <div className="flex-1 group/comment">
+                    <div className="flex-1 min-w-0 group/comment">
                       <div className="bg-gray-50 dark:bg-white/5 rounded-xl rounded-tl-none p-2.5 border border-gray-100 dark:border-white/5">
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-sm font-semibold text-gray-900 dark:text-gray-200">{comment.user?.displayName || 'Unknown User'}</span>
@@ -1705,7 +1705,7 @@ const ProjectView = () => {
                             )}
                           </div>
                         </div>
-                        <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{comment.text}</p>
+                        <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap break-words overflow-hidden">{comment.text}</p>
                       </div>
                     </div>
                   </div>
