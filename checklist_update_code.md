@@ -1,5 +1,19 @@
 # Checklist: Deploy OIT WorkSpace บน Server
 
+# update by kob
+#---------------------------------
+ที่ local pc spanmai push ปกติ  d:\coding\OIT_Task_Management\
+
+ที่   Server  run /var/www/app/oit-workspace/  ./deploy.sh
+
+
+
+
+
+
+#---------------------------------
+
+
 ## ข้อมูล Server
 
 | รายการ | ค่า |
