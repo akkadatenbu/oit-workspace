@@ -300,7 +300,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
           <div className="w-8 h-8 shrink-0 rounded-lg bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/20">
             <span className="text-white font-bold text-lg leading-none">O</span>
           </div>
-          {isOpen && <h1 className="text-xl font-bold text-gray-900 dark:text-white tracking-wide whitespace-nowrap overflow-hidden">WorkSpace</h1>}
+          {isOpen && <h1 className="text-xl font-bold text-gray-900 dark:text-white tracking-wide whitespace-nowrap overflow-hidden">OIT WorkSpace</h1>}
           
           {/* Collapse button for desktop */}
           <button 
