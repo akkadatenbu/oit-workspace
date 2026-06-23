@@ -10,7 +10,7 @@ const googleAuthUrl = import.meta.env.DEV
 
 const ConfirmInvitation = () => {
   const { token } = useParams<{ token: string }>();
-  const navigate = useNavigate();
+
   const { user, loading: authLoading } = useAuth();
 
   const [invitation, setInvitation] = useState<any>(null);
