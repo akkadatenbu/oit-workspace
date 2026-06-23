@@ -159,12 +159,27 @@ router.patch('/:id/archive', isAuthenticated, async (req, res) => {
   }
 });
 
-// ลบ Task
+// ลบ Task — เฉพาะ Admin / SpaceOwner / ProjectOwner / ผู้สร้าง task
 router.delete('/:id', isAuthenticated, async (req, res) => {
+  const userId = (req.user as any).id;
+  const isAdmin = (req.user as any).systemRole === 'Admin';
   try {
-    await prisma.task.delete({
-      where: { id: Number(req.params.id) }
+    const task = await prisma.task.findUnique({
+      where: { id: Number(req.params.id) },
+      include: { project: { include: { space: true, members: true } } }
     });
+    if (!task) return res.status(404).json({ error: 'ไม่พบงานนี้ในระบบ' });
+
+    const spaceOwnerId = (task.project.space as any).ownerId;
+    const isSpaceOwner = spaceOwnerId === null || spaceOwnerId === userId;
+    const projectRole = (task.project.members as any[]).find(m => m.userId === userId)?.role;
+    const isCreator = task.createdById === userId;
+
+    if (!isAdmin && !isSpaceOwner && projectRole !== 'Owner' && !isCreator) {
+      return res.status(403).json({ error: 'คุณไม่มีสิทธิ์ลบงานนี้ เฉพาะผู้สร้างหรือเจ้าของ Project เท่านั้น' });
+    }
+
+    await prisma.task.delete({ where: { id: Number(req.params.id) } });
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete task' });

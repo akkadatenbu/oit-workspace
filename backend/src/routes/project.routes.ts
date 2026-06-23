@@ -6,7 +6,7 @@ const router = Router();
 
 const userIsAdmin = (req: any) => (req.user as any)?.systemRole === 'Admin';
 
-// ตรวจสอบสิทธิ์เข้าถึง project
+// ตรวจสอบสิทธิ์เข้าถึง project (read)
 async function canAccessProject(projectId: number, userId: number, isAdmin: boolean): Promise<boolean> {
   if (isAdmin) return true;
   const project = await prisma.project.findUnique({
@@ -16,11 +16,24 @@ async function canAccessProject(projectId: number, userId: number, isAdmin: bool
   if (!project) return false;
   const isSpaceOwner = (project.space as any).ownerId === null || (project.space as any).ownerId === userId;
   const isProjectMember = project.members.some(m => m.userId === userId);
-  // ตรวจสอบ SpaceMember ด้วย
   const isSpaceMember = await prisma.spaceMember.findUnique({
     where: { spaceId_userId: { spaceId: project.spaceId, userId } }
   });
   return isSpaceOwner || isProjectMember || !!isSpaceMember;
+}
+
+// ตรวจสอบสิทธิ์จัดการ project (edit/delete) — เฉพาะ SpaceOwner หรือ ProjectOwner
+async function canManageProject(projectId: number, userId: number, isAdmin: boolean): Promise<boolean> {
+  if (isAdmin) return true;
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    include: { space: true, members: true }
+  });
+  if (!project) return false;
+  const spaceOwnerId = (project.space as any).ownerId;
+  const isSpaceOwner = spaceOwnerId === null || spaceOwnerId === userId;
+  const projectRole = project.members.find(m => m.userId === userId)?.role;
+  return isSpaceOwner || projectRole === 'Owner';
 }
 
 // ดึงข้อมูล Project พร้อม access check
@@ -104,8 +117,8 @@ router.post('/', isAuthenticated, async (req, res) => {
 router.patch('/:id', isAuthenticated, async (req, res) => {
   const userId = (req.user as any).id;
   try {
-    if (!await canAccessProject(Number(req.params.id), userId, userIsAdmin(req))) {
-      return res.status(403).json({ error: 'คุณไม่มีสิทธิ์ดำเนินการนี้ใน Project นี้' });
+    if (!await canManageProject(Number(req.params.id), userId, userIsAdmin(req))) {
+      return res.status(403).json({ error: 'คุณไม่มีสิทธิ์แก้ไข Project นี้ เฉพาะเจ้าของ Project หรือเจ้าของ Workspace เท่านั้น' });
     }
     const { name, folderId, status, description } = req.body;
     const project = await prisma.project.update({
@@ -127,8 +140,8 @@ router.patch('/:id', isAuthenticated, async (req, res) => {
 router.delete('/:id', isAuthenticated, async (req, res) => {
   const userId = (req.user as any).id;
   try {
-    if (!await canAccessProject(Number(req.params.id), userId, userIsAdmin(req))) {
-      return res.status(403).json({ error: 'คุณไม่มีสิทธิ์ดำเนินการนี้ใน Project นี้' });
+    if (!await canManageProject(Number(req.params.id), userId, userIsAdmin(req))) {
+      return res.status(403).json({ error: 'คุณไม่มีสิทธิ์ลบ Project นี้ เฉพาะเจ้าของ Project หรือเจ้าของ Workspace เท่านั้น' });
     }
     await prisma.project.delete({ where: { id: Number(req.params.id) } });
     res.json({ success: true });
