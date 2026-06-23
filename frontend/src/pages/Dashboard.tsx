@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { LayoutDashboard, AlertCircle, CheckCircle2, TrendingUp, Clock } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
-  PieChart, Pie, Legend
+  PieChart, Pie
 } from 'recharts';
 
 const statusColors: Record<string, string> = {
