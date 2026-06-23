@@ -26,7 +26,17 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
 
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
-  const [expandedFolders, setExpandedFolders] = useState<Record<number, boolean>>({});
+  const [expandedFolders, setExpandedFolders] = useState<Record<number, boolean>>(() => {
+    try { return JSON.parse(localStorage.getItem('sidebar_folders_expanded') || '{}'); }
+    catch { return {}; }
+  });
+  const toggleFolder = (folderId: number, value?: boolean) => {
+    setExpandedFolders(prev => {
+      const next = { ...prev, [folderId]: value !== undefined ? value : !prev[folderId] };
+      localStorage.setItem('sidebar_folders_expanded', JSON.stringify(next));
+      return next;
+    });
+  };
 
   // collapse/expand workspace — persist ใน localStorage
   const [expandedSpaces, setExpandedSpaces] = useState<Record<number, boolean>>(() => {
@@ -114,7 +124,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
       }
       const folderRes = await apiClient.post('/folders', { spaceId, name: newFolderName.trim() });
       await fetchSpaces();
-      setExpandedFolders({ ...expandedFolders, [folderRes.data.id]: true });
+      toggleFolder(folderRes.data.id, true);
       setIsFolderModalOpen(false);
       setNewFolderName('');
     } catch (err) {
@@ -446,7 +456,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
                     <div key={folder.id} className="mb-1">
                       <div 
                         className={`group flex items-center justify-between py-1 px-2 cursor-pointer rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 text-gray-600 dark:text-gray-400 ${isOpen ? 'mx-1' : 'mx-0 justify-center'}`}
-                        onClick={() => setExpandedFolders({...expandedFolders, [folder.id]: !expandedFolders[folder.id]})}
+                        onClick={() => toggleFolder(folder.id)}
                         title={!isOpen ? folder.name : undefined}
                       >
                         <div className="flex items-center space-x-2 overflow-hidden">
