@@ -52,7 +52,7 @@ router.get('/:id', isAuthenticated, async (req, res) => {
     const isSpaceOwner = project.space.ownerId === null || project.space.ownerId === userId;
     const isMember = project.members.some(m => m.userId === userId);
     if (!userIsAdmin(req) && !isSpaceOwner && !isMember) {
-      return res.status(403).json({ error: 'Access denied' });
+      return res.status(403).json({ error: 'คุณไม่มีสิทธิ์เข้าถึง Project นี้ กรุณาติดต่อเจ้าของ Workspace' });
     }
 
     res.json(project);
@@ -105,7 +105,7 @@ router.patch('/:id', isAuthenticated, async (req, res) => {
   const userId = (req.user as any).id;
   try {
     if (!await canAccessProject(Number(req.params.id), userId, userIsAdmin(req))) {
-      return res.status(403).json({ error: 'Access denied' });
+      return res.status(403).json({ error: 'คุณไม่มีสิทธิ์ดำเนินการนี้ใน Project นี้' });
     }
     const { name, folderId, status, description } = req.body;
     const project = await prisma.project.update({
@@ -128,7 +128,7 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
   const userId = (req.user as any).id;
   try {
     if (!await canAccessProject(Number(req.params.id), userId, userIsAdmin(req))) {
-      return res.status(403).json({ error: 'Access denied' });
+      return res.status(403).json({ error: 'คุณไม่มีสิทธิ์ดำเนินการนี้ใน Project นี้' });
     }
     await prisma.project.delete({ where: { id: Number(req.params.id) } });
     res.json({ success: true });
@@ -144,7 +144,7 @@ router.get('/:id/members', isAuthenticated, async (req, res) => {
   const userId = (req.user as any).id;
   try {
     if (!await canAccessProject(Number(req.params.id), userId, userIsAdmin(req))) {
-      return res.status(403).json({ error: 'Access denied' });
+      return res.status(403).json({ error: 'คุณไม่มีสิทธิ์ดำเนินการนี้ใน Project นี้' });
     }
     const members = await prisma.projectMember.findMany({
       where: { projectId: Number(req.params.id) },
@@ -162,7 +162,7 @@ router.post('/:id/members', isAuthenticated, async (req, res) => {
   const { userId: targetUserId, role = 'Member' } = req.body;
   try {
     if (!await canAccessProject(Number(req.params.id), userId, userIsAdmin(req))) {
-      return res.status(403).json({ error: 'Access denied' });
+      return res.status(403).json({ error: 'คุณไม่มีสิทธิ์ดำเนินการนี้ใน Project นี้' });
     }
     const member = await prisma.projectMember.upsert({
       where: { projectId_userId: { projectId: Number(req.params.id), userId: Number(targetUserId) } },

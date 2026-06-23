@@ -27,12 +27,12 @@ router.get('/', isAuthenticated, async (req, res) => {
     const whereClause = userIsAdmin(req)
       ? {}
       : {
-          OR: [
-            { ownerId: userId },
-            { ownerId: null },
-            { id: { in: accessibleSpaceIds } }
-          ]
-        };
+        OR: [
+          { ownerId: userId },
+          { ownerId: null },
+          { id: { in: accessibleSpaceIds } }
+        ]
+      };
 
     const spaces = await prisma.space.findMany({
       where: whereClause,
@@ -90,13 +90,13 @@ router.patch('/:id', isAuthenticated, async (req, res) => {
     const space = await prisma.space.findUnique({ where: { id: Number(req.params.id) } });
     if (!space) return res.status(404).json({ error: 'Space not found' });
     if (!userIsAdmin(req) && space.ownerId !== null && space.ownerId !== userId) {
-      return res.status(403).json({ error: 'Access denied' });
+      return res.status(403).json({ error: 'คุณไม่มีสิทธิ์ดำเนินการนี้ เฉพาะเจ้าของ Workspace เท่านั้น' });
     }
     const { name, description } = req.body;
     const updated = await prisma.space.update({
       where: { id: Number(req.params.id) },
       data: {
-        ...(name        !== undefined && { name }),
+        ...(name !== undefined && { name }),
         ...(description !== undefined && { description })
       }
     });
@@ -113,7 +113,7 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
     const space = await prisma.space.findUnique({ where: { id: Number(req.params.id) } });
     if (!space) return res.status(404).json({ error: 'Space not found' });
     if (!userIsAdmin(req) && space.ownerId !== null && space.ownerId !== userId) {
-      return res.status(403).json({ error: 'Access denied' });
+      return res.status(403).json({ error: 'คุณไม่มีสิทธิ์ดำเนินการนี้ เฉพาะเจ้าของ Workspace หรือ Admin เท่านั้น' });
     }
     await prisma.space.delete({ where: { id: Number(req.params.id) } });
     res.json({ success: true });
@@ -134,7 +134,7 @@ router.post('/:id/members', isAuthenticated, async (req, res) => {
     const space = await prisma.space.findUnique({ where: { id: spaceId } });
     if (!space) return res.status(404).json({ error: 'Space not found' });
     if (!userIsAdmin(req) && space.ownerId !== null && space.ownerId !== currentUserId) {
-      return res.status(403).json({ error: 'Only space owner can manage team' });
+      return res.status(403).json({ error: 'เฉพาะเจ้าของ Workspace เท่านั้นที่สามารถจัดการสมาชิกทีมได้' });
     }
 
     // เพิ่มเป็น SpaceMember (upsert กันซ้ำ)
@@ -172,7 +172,7 @@ router.delete('/:id/members/:userId', isAuthenticated, async (req, res) => {
     const space = await prisma.space.findUnique({ where: { id: spaceId } });
     if (!space) return res.status(404).json({ error: 'Space not found' });
     if (!userIsAdmin(req) && space.ownerId !== null && space.ownerId !== currentUserId) {
-      return res.status(403).json({ error: 'Only space owner can manage team' });
+      return res.status(403).json({ error: 'เฉพาะเจ้าของ Workspace เท่านั้นที่สามารถจัดการสมาชิกทีมได้' });
     }
 
     // ลบ SpaceMember

@@ -9,10 +9,10 @@ const router = Router();
 
 // ตั้งค่า multer สำหรับบันทึกไฟล์อัปโหลด
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
+  destination: (_req, _file, cb) => {
     cb(null, path.join(__dirname, '../../uploads'));
   },
-  filename: (req, file, cb) => {
+  filename: (_req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     cb(null, uniqueSuffix + path.extname(file.originalname));
   }
@@ -399,7 +399,7 @@ router.delete('/comments/:commentId', isAuthenticated, async (req, res) => {
     });
     if (!comment) return res.status(404).json({ error: 'Comment not found' });
     if (!isAdmin && comment.userId !== currentUserId) {
-      return res.status(403).json({ error: 'Can only delete your own comments' });
+      return res.status(403).json({ error: 'คุณสามารถลบได้เฉพาะ Comment ของตัวเองเท่านั้น' });
     }
     await prisma.taskComment.delete({ where: { id: Number(req.params.commentId) } });
     res.json({ success: true });

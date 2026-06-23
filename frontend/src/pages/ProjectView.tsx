@@ -53,6 +53,10 @@ const formatRelativeTime = (date: Date): string => {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
+// Helper: ดึง error message จาก server หรือใช้ fallback
+const errMsg = (err: any, fallback = 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง') =>
+  err?.response?.data?.error || fallback;
+
 const ProjectView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -161,7 +165,7 @@ const ProjectView = () => {
       await fetchPendingInvitations();
       Swal.fire({ icon: 'success', title: 'ส่งคำเชิญแล้ว!', text: `ส่งลิงก์ยืนยันไปที่ ${inviteEmail.trim()} เรียบร้อย`, timer: 3000, showConfirmButton: false });
     } catch (err: any) {
-      Swal.fire('Error', err.response?.data?.error || 'Failed to send invitation', 'error');
+      Swal.fire('เกิดข้อผิดพลาด', err.response?.data?.error || 'ไม่สามารถส่งคำเชิญได้', 'error');
     } finally {
       setIsInviting(false);
     }
@@ -172,7 +176,7 @@ const ProjectView = () => {
       await apiClient.delete(`/invitations/${invId}`);
       setPendingInvitations(prev => prev.filter(i => i.id !== invId));
     } catch {
-      Swal.fire('Error', `Failed to cancel invitation to ${email}`, 'error');
+      Swal.fire('เกิดข้อผิดพลาด', `ไม่สามารถยกเลิกคำเชิญของ ${email} ได้`, 'error');
     }
   };
 
@@ -191,7 +195,7 @@ const ProjectView = () => {
       await apiClient.delete(`/projects/${id}/members/${userId}`);
       await fetchProject();
     } catch (err) {
-      Swal.fire('Error', 'Failed to remove member', 'error');
+      Swal.fire('เกิดข้อผิดพลาด', errMsg(err, 'ไม่สามารถลบสมาชิกออกจาก Project ได้'), 'error');
     }
   };
 
@@ -217,7 +221,7 @@ const ProjectView = () => {
       setIsMoveProjectModalOpen(false);
       window.location.reload(); // Reload to refresh Sidebar and Project
     } catch (err) {
-      Swal.fire('Error', 'Failed to move project', 'error');
+      Swal.fire('เกิดข้อผิดพลาด', errMsg(err, 'ไม่สามารถย้าย Project ได้'), 'error');
     } finally {
       setIsMovingProject(false);
     }
@@ -241,7 +245,7 @@ const ProjectView = () => {
         // Reload to refresh Sidebar
         window.location.reload();
       } catch (err) {
-        Swal.fire('Error', 'Failed to rename project', 'error');
+        Swal.fire('เกิดข้อผิดพลาด', errMsg(err, 'ไม่สามารถเปลี่ยนชื่อ Project ได้'), 'error');
       }
     }
   };
@@ -265,7 +269,7 @@ const ProjectView = () => {
           window.location.reload();
         });
       } catch (err) {
-        Swal.fire('Error', 'Failed to delete project', 'error');
+        Swal.fire('เกิดข้อผิดพลาด', errMsg(err, 'ไม่สามารถลบ Project ได้'), 'error');
       }
     }
   };
@@ -284,7 +288,7 @@ const ProjectView = () => {
       navigate(`/projects/${projRes.data.id}`);
     } catch (err) {
       console.error(err);
-      Swal.fire('Error', 'Failed to create sample project', 'error');
+      Swal.fire('เกิดข้อผิดพลาด', errMsg(err, 'ไม่สามารถสร้างตัวอย่าง Project ได้'), 'error');
       setLoading(false);
     }
   };
@@ -311,7 +315,7 @@ const ProjectView = () => {
       setNewTask({ title: '', priority: 'Medium' });
     } catch (err) {
       console.error(err);
-      Swal.fire('Error', 'Failed to create task', 'error');
+      Swal.fire('เกิดข้อผิดพลาด', errMsg(err, 'ไม่สามารถสร้างงานได้'), 'error');
     } finally {
       setIsCreatingTask(false);
     }
@@ -349,7 +353,7 @@ const ProjectView = () => {
     } catch (err) {
       console.error(err);
       // Removed revert on failure since we don't have originalTasks anymore
-      Swal.fire('Error', 'Failed to update task status', 'error');
+      Swal.fire('เกิดข้อผิดพลาด', errMsg(err, 'ไม่สามารถอัปเดตสถานะงานได้'), 'error');
     }
   };
 
@@ -394,7 +398,7 @@ const ProjectView = () => {
       setNewSubtaskDueDate('');
       setNewSubtaskTimeEstimate('');
     } catch (err) {
-      Swal.fire('Error', 'Failed to add subtask', 'error');
+      Swal.fire('เกิดข้อผิดพลาด', errMsg(err, 'ไม่สามารถเพิ่มงานย่อยได้'), 'error');
     }
   };
 
@@ -412,7 +416,7 @@ const ProjectView = () => {
       setNewLinkUrl('');
       setNewLinkTitle('');
     } catch (err) {
-      Swal.fire('Error', 'Failed to add link', 'error');
+      Swal.fire('เกิดข้อผิดพลาด', errMsg(err, 'ไม่สามารถเพิ่ม Link ได้'), 'error');
     }
   };
 
@@ -431,7 +435,7 @@ const ProjectView = () => {
       setTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
       setNewCommentText('');
     } catch (err) {
-      Swal.fire('Error', 'Failed to post comment', 'error');
+      Swal.fire('เกิดข้อผิดพลาด', errMsg(err, 'ไม่สามารถส่ง Comment ได้'), 'error');
     }
   };
 
@@ -450,7 +454,7 @@ const ProjectView = () => {
       setSelectedTask(updatedTask);
       setTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
     } catch (err) {
-      Swal.fire('Error', 'Failed to upload file', 'error');
+      Swal.fire('เกิดข้อผิดพลาด', errMsg(err, 'ไม่สามารถอัปโหลดไฟล์ได้ กรุณาตรวจสอบขนาดหรือประเภทไฟล์'), 'error');
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -1024,7 +1028,7 @@ const ProjectView = () => {
                 setIsEditModalOpen(false);
               } catch (err) {
                 console.error(err);
-                Swal.fire('Error', 'Failed to update task', 'error');
+                Swal.fire('เกิดข้อผิดพลาด', errMsg(err, 'ไม่สามารถบันทึกการเปลี่ยนแปลงงานได้'), 'error');
               } finally {
                 setIsUpdatingTask(false);
               }
@@ -1112,7 +1116,7 @@ const ProjectView = () => {
                                   setSelectedTask(updatedTask);
                                   setTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
                                 } catch (err) {
-                                  Swal.fire('Error', 'Failed to assign user', 'error');
+                                  Swal.fire('เกิดข้อผิดพลาด', errMsg(err, 'ไม่สามารถเพิ่มผู้รับผิดชอบได้'), 'error');
                                 }
                               }}
                               className="w-full flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-left"
@@ -1151,7 +1155,7 @@ const ProjectView = () => {
                               setSelectedTask(updatedTask);
                               setTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
                             } catch (err) {
-                              Swal.fire('Error', 'Failed to remove assignee', 'error');
+                              Swal.fire('เกิดข้อผิดพลาด', errMsg(err, 'ไม่สามารถลบผู้รับผิดชอบออกได้'), 'error');
                             }
                           }} className="ml-1.5 hover:text-red-500"><X className="w-3 h-3" /></button>
                         )}
@@ -1235,7 +1239,7 @@ const ProjectView = () => {
                       setTasks(tasks.filter(t => t.id !== selectedTask.id));
                       setIsEditModalOpen(false);
                     } catch (err) {
-                      Swal.fire('Error', 'Failed to delete task', 'error');
+                      Swal.fire('เกิดข้อผิดพลาด', errMsg(err, 'ไม่สามารถลบงานนี้ได้'), 'error');
                     }
                   }}
                   className="text-red-500 hover:text-red-600 text-sm font-semibold px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
@@ -1251,7 +1255,7 @@ const ProjectView = () => {
                       setTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
                       setIsEditModalOpen(false);
                     } catch {
-                      Swal.fire('Error', 'Failed to archive task', 'error');
+                      Swal.fire('เกิดข้อผิดพลาด', errMsg(err, 'ไม่สามารถ Archive งานนี้ได้'), 'error');
                     }
                   }}
                   className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 text-sm font-semibold px-3 py-2 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors"
@@ -1313,7 +1317,7 @@ const ProjectView = () => {
                             return t;
                           }));
                         } catch (err) {
-                          Swal.fire('Error', 'Failed to update subtask status', 'error');
+                          Swal.fire('เกิดข้อผิดพลาด', errMsg(err, 'ไม่สามารถอัปเดตสถานะงานย่อยได้'), 'error');
                         }
                       }}
                       className="w-4 h-4 text-blue-600 rounded border-gray-300 cursor-pointer shrink-0"
@@ -1335,7 +1339,7 @@ const ProjectView = () => {
                           setSelectedTask(updatedTask);
                           setTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
                         } catch (err) {
-                          Swal.fire('Error', 'Failed to update subtask', 'error');
+                          Swal.fire('เกิดข้อผิดพลาด', errMsg(err, 'ไม่สามารถแก้ไขงานย่อยได้'), 'error');
                         }
                       }}
                       onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
@@ -1357,7 +1361,7 @@ const ProjectView = () => {
                               const updatedTask = { ...selectedTask, subTasks: updatedSubTasks };
                               setSelectedTask(updatedTask);
                               setTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
-                            } catch { Swal.fire('Error', 'Failed to remove assignee', 'error'); }
+                            } catch { Swal.fire('เกิดข้อผิดพลาด', errMsg(err, 'ไม่สามารถลบผู้รับผิดชอบออกได้'), 'error'); }
                           }}
                           className="w-5 h-5 rounded-full overflow-hidden border border-white dark:border-[#18181b] hover:ring-2 hover:ring-red-400 transition-all shrink-0"
                         >
@@ -1394,7 +1398,7 @@ const ProjectView = () => {
                                       const updatedTask = { ...selectedTask, subTasks: updatedSubTasks };
                                       setSelectedTask(updatedTask);
                                       setTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
-                                    } catch { Swal.fire('Error', 'Failed to assign', 'error'); }
+                                    } catch (err) { Swal.fire('เกิดข้อผิดพลาด', errMsg(err, 'ไม่สามารถเพิ่มผู้รับผิดชอบได้'), 'error'); }
                                   }}
                                   className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-left"
                                 >
@@ -1436,7 +1440,7 @@ const ProjectView = () => {
                             setSelectedTask(updatedTask);
                             setTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
                           } catch (err) {
-                            Swal.fire('Error', 'Failed to update estimate', 'error');
+                            Swal.fire('เกิดข้อผิดพลาด', errMsg(err, 'ไม่สามารถบันทึก Estimate ได้'), 'error');
                           }
                         }}
                         onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
@@ -1460,7 +1464,7 @@ const ProjectView = () => {
                             setSelectedTask(updatedTask);
                             setTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
                           } catch (err) {
-                            Swal.fire('Error', 'Failed to update due date', 'error');
+                            Swal.fire('เกิดข้อผิดพลาด', errMsg(err, 'ไม่สามารถบันทึกวันกำหนดส่งได้'), 'error');
                           }
                         }}
                         className={`text-xs bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-1 cursor-pointer ${isOverdue ? 'text-red-500 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}
@@ -1476,7 +1480,7 @@ const ProjectView = () => {
                           setSelectedTask(updatedTask);
                           setTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
                         } catch (err) {
-                          Swal.fire('Error', 'Failed to delete subtask', 'error');
+                          Swal.fire('เกิดข้อผิดพลาด', errMsg(err, 'ไม่สามารถลบงานย่อยนี้ได้'), 'error');
                         }
                       }}
                       className="shrink-0 p-0.5 text-gray-300 hover:text-red-500 dark:text-gray-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded opacity-0 group-hover:opacity-100 transition-all"
@@ -1565,7 +1569,7 @@ const ProjectView = () => {
                           setSelectedTask(updatedTask);
                           setTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
                         } catch (err) {
-                          Swal.fire('Error', 'Failed to delete attachment', 'error');
+                          Swal.fire('เกิดข้อผิดพลาด', errMsg(err, 'ไม่สามารถลบไฟล์แนบได้'), 'error');
                         }
                       }}
                       className="absolute right-3 top-3 p-1.5 bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 rounded-md opacity-0 group-hover:opacity-100 hover:bg-red-200 dark:hover:bg-red-500/40 transition-all"
@@ -1603,7 +1607,7 @@ const ProjectView = () => {
                           setSelectedTask(updatedTask);
                           setTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
                         } catch (err) {
-                          Swal.fire('Error', 'Failed to delete link', 'error');
+                          Swal.fire('เกิดข้อผิดพลาด', errMsg(err, 'ไม่สามารถลบ Link ได้'), 'error');
                         }
                       }}
                       className="shrink-0 p-1 text-gray-300 hover:text-red-500 dark:text-gray-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded opacity-0 group-hover:opacity-100 transition-all"
@@ -1696,7 +1700,7 @@ const ProjectView = () => {
                                     setSelectedTask(updatedTask);
                                     setTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
                                   } catch {
-                                    Swal.fire('Error', 'Failed to delete comment', 'error');
+                                    Swal.fire('เกิดข้อผิดพลาด', errMsg(err, 'ไม่สามารถลบ Comment ได้'), 'error');
                                   }
                                 }}
                                 className="opacity-0 group-hover/comment:opacity-100 p-0.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-all"

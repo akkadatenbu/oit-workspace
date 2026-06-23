@@ -106,7 +106,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
       setSelectedFolderIdForProject(null);
       navigate(`/projects/${projRes.data.id}`);
     } catch (err) {
-      Swal.fire('Error', 'Failed to create project', 'error');
+      Swal.fire('เกิดข้อผิดพลาด', (err as any)?.response?.data?.error || 'ไม่สามารถสร้าง Project ได้', 'error');
     } finally {
       setIsCreating(false);
     }
@@ -128,7 +128,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
       setIsFolderModalOpen(false);
       setNewFolderName('');
     } catch (err) {
-      Swal.fire('Error', 'Failed to create folder', 'error');
+      Swal.fire('เกิดข้อผิดพลาด', (err as any)?.response?.data?.error || 'ไม่สามารถสร้าง Folder ได้', 'error');
     } finally {
       setIsCreating(false);
     }
@@ -150,7 +150,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
         await apiClient.delete(`/folders/${folder.id}`);
         fetchSpaces();
       } catch (err) {
-        Swal.fire('Error', 'Failed to delete folder', 'error');
+        Swal.fire('เกิดข้อผิดพลาด', (err as any)?.response?.data?.error || 'ไม่สามารถลบ Folder ได้', 'error');
       }
     }
   };
@@ -181,8 +181,8 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
       const { data } = await apiClient.get('/spaces');
       const updated = data.find((s: any) => s.id === spaceId);
       if (updated) setTeamModalSpace(updated);
-    } catch {
-      Swal.fire('Error', 'Failed to remove member', 'error');
+    } catch (err) {
+      Swal.fire('เกิดข้อผิดพลาด', (err as any)?.response?.data?.error || 'ไม่สามารถลบสมาชิกได้', 'error');
     }
   };
 
@@ -197,7 +197,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
       setNewSpaceName('');
       setNewSpaceDescription('');
     } catch (err) {
-      Swal.fire('Error', 'Failed to create workspace', 'error');
+      Swal.fire('เกิดข้อผิดพลาด', (err as any)?.response?.data?.error || 'ไม่สามารถสร้าง Workspace ได้', 'error');
     } finally {
       setIsCreating(false);
     }
@@ -237,7 +237,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
         await apiClient.patch(`/spaces/${space.id}`, { name: newName });
         fetchSpaces();
       } catch (err) {
-        Swal.fire('Error', 'Failed to rename workspace', 'error');
+        Swal.fire('เกิดข้อผิดพลาด', (err as any)?.response?.data?.error || 'ไม่สามารถเปลี่ยนชื่อ Workspace ได้', 'error');
       }
     }
   };
@@ -258,7 +258,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
         await fetchSpaces();
         navigate('/dashboard');
       } catch (err) {
-        Swal.fire('Error', 'Failed to delete workspace', 'error');
+        Swal.fire('เกิดข้อผิดพลาด', (err as any)?.response?.data?.error || 'ไม่สามารถลบ Workspace ได้', 'error');
       }
     }
   };
@@ -281,7 +281,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
         await apiClient.patch(`/folders/${folder.id}`, { name: newName });
         fetchSpaces();
       } catch (err) {
-        Swal.fire('Error', 'Failed to rename folder', 'error');
+        Swal.fire('เกิดข้อผิดพลาด', (err as any)?.response?.data?.error || 'ไม่สามารถเปลี่ยนชื่อ Folder ได้', 'error');
       }
     }
   };
