@@ -1254,7 +1254,7 @@ const ProjectView = () => {
                       const updatedTask = { ...selectedTask, isArchived: data.isArchived };
                       setTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
                       setIsEditModalOpen(false);
-                    } catch {
+                    } catch (err) {
                       Swal.fire('เกิดข้อผิดพลาด', errMsg(err, 'ไม่สามารถ Archive งานนี้ได้'), 'error');
                     }
                   }}
@@ -1361,7 +1361,7 @@ const ProjectView = () => {
                               const updatedTask = { ...selectedTask, subTasks: updatedSubTasks };
                               setSelectedTask(updatedTask);
                               setTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
-                            } catch { Swal.fire('เกิดข้อผิดพลาด', errMsg(err, 'ไม่สามารถลบผู้รับผิดชอบออกได้'), 'error'); }
+                            } catch (err) { Swal.fire('เกิดข้อผิดพลาด', errMsg(err, 'ไม่สามารถลบผู้รับผิดชอบออกได้'), 'error'); }
                           }}
                           className="w-5 h-5 rounded-full overflow-hidden border border-white dark:border-[#18181b] hover:ring-2 hover:ring-red-400 transition-all shrink-0"
                         >
@@ -1699,7 +1699,7 @@ const ProjectView = () => {
                                     };
                                     setSelectedTask(updatedTask);
                                     setTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
-                                  } catch {
+                                  } catch (err) {
                                     Swal.fire('เกิดข้อผิดพลาด', errMsg(err, 'ไม่สามารถลบ Comment ได้'), 'error');
                                   }
                                 }}
