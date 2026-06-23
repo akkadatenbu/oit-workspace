@@ -51,7 +51,7 @@ const PendingActivation = () => {
         </div>
 
         <p className="text-center text-xs text-gray-400 mt-4">
-          มหาวิทยาลัยนอร์ท-เชียงใหม่ · สำนักเทคโนโลยีสารสนเทศ
+          มหาวิทยาลัยนอร์ทกรุงเทพ · สำนักเทคโนโลยีสารสนเทศ
         </p>
       </div>
     </div>

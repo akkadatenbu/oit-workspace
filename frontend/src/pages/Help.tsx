@@ -21,7 +21,7 @@ const sections: Section[] = [
     content: [
       {
         q: 'OIT WorkSpace คืออะไร?',
-        a: 'ระบบจัดการงานและโปรเจกต์สำหรับทีม OIT มหาวิทยาลัยนอร์ท-เชียงใหม่ รองรับการทำงานร่วมกัน แบ่งเป็น Workspace → Folder → Project → Task ตามลำดับ'
+        a: 'ระบบจัดการงานและโปรเจกต์สำหรับทีม OIT มหาวิทยาลัยนอร์ทกรุงเทพ รองรับการทำงานร่วมกัน แบ่งเป็น Workspace → Folder → Project → Task ตามลำดับ'
       },
       {
         q: 'โครงสร้างของระบบเป็นอย่างไร?',
@@ -331,7 +331,7 @@ const Help = () => {
       {/* Footer */}
       <div className="mt-8 p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-500/10 dark:to-purple-500/10 rounded-2xl border border-blue-100 dark:border-blue-500/20 text-center">
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          OIT WorkSpace · มหาวิทยาลัยนอร์ท-เชียงใหม่
+          OIT WorkSpace · มหาวิทยาลัยนอร์ทกรุงเทพ
         </p>
         <p className="text-xs text-gray-400 mt-1">หากพบปัญหาการใช้งาน ติดต่อผู้ดูแลระบบที่ Admin Panel</p>
       </div>

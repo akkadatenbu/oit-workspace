@@ -38,7 +38,8 @@ const ConfirmInvitation = () => {
       const dest = data.type === 'system' ? '/dashboard'
         : data.type === 'space' ? '/members'
         : `/projects/${data.projectId}`;
-      setTimeout(() => navigate(dest), 2000);
+      // force full reload เพื่อ refresh session/auth context (isActive อาจยัง false ในหน่วยความจำ)
+      setTimeout(() => { window.location.href = dest; }, 2000);
     } catch (err: any) {
       setErrorMsg(err.response?.data?.error || 'เกิดข้อผิดพลาด');
       setStatus('error');

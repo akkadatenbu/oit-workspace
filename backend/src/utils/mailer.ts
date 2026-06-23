@@ -28,7 +28,7 @@ export const sendSystemActivationEmail = async (params: {
         </div>
         <div style="padding:32px;">
           <p style="margin:0 0 16px;font-size:15px;color:#374151;">
-            <strong>${inviterName}</strong> ได้เชิญคุณเข้าใช้งาน <strong style="color:#3b82f6;">OIT WorkSpace</strong> ของมหาวิทยาลัยนอร์ท-เชียงใหม่
+            <strong>${inviterName}</strong> ได้เชิญคุณเข้าใช้งาน <strong style="color:#3b82f6;">OIT WorkSpace</strong> ของมหาวิทยาลัยนอร์ทกรุงเทพ
           </p>
           <p style="margin:0 0 20px;font-size:14px;color:#6b7280;">
             คุณสามารถสร้าง Workspace ของหน่วยงานตัวเองได้ทันทีหลังจากยืนยันการเข้าใช้งาน
@@ -45,7 +45,7 @@ export const sendSystemActivationEmail = async (params: {
           </p>
         </div>
         <div style="background:#f9fafb;padding:16px 32px;border-top:1px solid #e5e7eb;">
-          <p style="margin:0;font-size:12px;color:#9ca3af;">OIT WorkSpace — มหาวิทยาลัยนอร์ท-เชียงใหม่</p>
+          <p style="margin:0;font-size:12px;color:#9ca3af;">OIT WorkSpace — มหาวิทยาลัยนอร์ทกรุงเทพ</p>
         </div>
       </div>
     `,
@@ -92,7 +92,7 @@ export const sendInvitationEmail = async (params: {
           </p>
         </div>
         <div style="background:#f9fafb;padding:16px 32px;border-top:1px solid #e5e7eb;">
-          <p style="margin:0;font-size:12px;color:#9ca3af;">OIT WorkSpace — มหาวิทยาลัยนอร์ท-เชียงใหม่</p>
+          <p style="margin:0;font-size:12px;color:#9ca3af;">OIT WorkSpace — มหาวิทยาลัยนอร์ทกรุงเทพ</p>
         </div>
       </div>
     `,
