@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { apiClient } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { CheckCircle2, XCircle, Clock, Layers, LogIn } from 'lucide-react';
