@@ -242,7 +242,9 @@ router.post('/invitations/:token/confirm', isAuthenticated, async (req, res) => 
       return res.json({ success: true, projectId: inv.projectId, projectName: inv.project?.name, type: 'project' });
     }
 
-    return res.status(400).json({ error: 'Invalid invitation (no projectId or spaceId)' });
+    // System-level invitation (projectId=null, spaceId=null) → just activate account
+    await prisma.projectInvitation.update({ where: { token: req.params.token }, data: { status: 'Accepted' } });
+    return res.json({ success: true, type: 'system', message: 'บัญชีของคุณถูกเปิดใช้งานแล้ว' });
   } catch (error) {
     console.error('[confirm]', error);
     res.status(500).json({ error: 'Failed to confirm invitation' });

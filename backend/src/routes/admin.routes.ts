@@ -1,6 +1,8 @@
 import { Router } from 'express';
+import crypto from 'crypto';
 import { prisma } from '../index';
 import { isAuthenticated } from './space.routes';
+import { sendSystemActivationEmail } from '../utils/mailer';
 
 const router = Router();
 
@@ -37,6 +39,45 @@ router.get('/stats', isAuthenticated, isAdmin, async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
+// เชิญ user เข้าระบบ (system-level, ไม่เกี่ยวกับ Workspace ใด)
+router.post('/invite-to-system', isAuthenticated, isAdmin, async (req, res) => {
+  const { email } = req.body;
+  const inviterName = (req.user as any).displayName || 'Admin';
+  if (!email?.includes('@')) return res.status(400).json({ error: 'Invalid email address' });
+
+  try {
+    // ตรวจว่า user มีบัญชีและ active อยู่แล้วหรือยัง
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser?.isActive) {
+      return res.status(409).json({ error: 'บัญชีนี้เปิดใช้งานอยู่แล้ว' });
+    }
+
+    // ยกเลิก pending system invite เดิม (ถ้ามี)
+    await prisma.projectInvitation.deleteMany({
+      where: { email, projectId: null, spaceId: null, status: 'Pending' }
+    });
+
+    const token     = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    // สร้าง system invite (projectId=null, spaceId=null)
+    await prisma.projectInvitation.create({
+      data: { email, token, role: 'Member', invitedById: (req.user as any).id, expiresAt }
+    });
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    await sendSystemActivationEmail({
+      to: email, inviterName, confirmUrl: `${frontendUrl}/confirm-invitation/${token}`
+    });
+
+    res.json({ success: true, message: `ส่งลิงก์เปิดใช้งานไปที่ ${email} แล้ว` });
+  } catch (error) {
+    console.error('[invite-to-system]', error);
+    res.status(500).json({ error: 'Failed to send invitation' });
   }
 });
 

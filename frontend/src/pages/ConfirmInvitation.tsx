@@ -35,7 +35,9 @@ const ConfirmInvitation = () => {
     try {
       const { data } = await apiClient.post(`/invitations/${token}/confirm`);
       setStatus('success');
-      const dest = data.type === 'space' ? '/members' : `/projects/${data.projectId}`;
+      const dest = data.type === 'system' ? '/dashboard'
+        : data.type === 'space' ? '/members'
+        : `/projects/${data.projectId}`;
       setTimeout(() => navigate(dest), 2000);
     } catch (err: any) {
       setErrorMsg(err.response?.data?.error || 'เกิดข้อผิดพลาด');
@@ -88,8 +90,8 @@ const ConfirmInvitation = () => {
           {status === 'success' && (
             <div className="flex flex-col items-center py-4 text-center">
               <CheckCircle2 className="w-14 h-14 text-green-400 mb-4" />
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2">เข้าร่วมสำเร็จ!</h2>
-              <p className="text-sm text-gray-500">กำลังพาคุณไปยังโปรเจกต์...</p>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2">เปิดใช้งานสำเร็จ!</h2>
+              <p className="text-sm text-gray-500">กำลังพาคุณเข้าสู่ระบบ...</p>
             </div>
           )}
 
@@ -101,8 +103,14 @@ const ConfirmInvitation = () => {
                   <Layers className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 mb-0.5">คุณถูกเชิญเข้าร่วมโปรเจกต์</p>
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">{invitation.project?.name}</h2>
+                  <p className="text-xs text-gray-500 mb-0.5">
+                    {invitation.spaceId ? 'คุณถูกเชิญเข้าร่วม Workspace'
+                     : invitation.projectId ? 'คุณถูกเชิญเข้าร่วม Project'
+                     : 'คุณได้รับสิทธิ์เข้าใช้งาน'}
+                  </p>
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                    {invitation.space?.name || invitation.project?.name || 'OIT WorkSpace'}
+                  </h2>
                 </div>
               </div>
 
