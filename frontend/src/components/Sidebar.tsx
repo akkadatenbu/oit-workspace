@@ -28,6 +28,22 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
   const [newFolderName, setNewFolderName] = useState('');
   const [expandedFolders, setExpandedFolders] = useState<Record<number, boolean>>({});
 
+  // collapse/expand workspace — persist ใน localStorage
+  const [expandedSpaces, setExpandedSpaces] = useState<Record<number, boolean>>(() => {
+    try { return JSON.parse(localStorage.getItem('sidebar_spaces_expanded') || '{}'); }
+    catch { return {}; }
+  });
+  const toggleSpace = (spaceId: number) => {
+    setExpandedSpaces(prev => {
+      const next = { ...prev, [spaceId]: !isSpaceExpanded(spaceId, prev) };
+      localStorage.setItem('sidebar_spaces_expanded', JSON.stringify(next));
+      return next;
+    });
+  };
+  // default: expanded (ถ้าไม่มีใน localStorage ถือว่า expanded)
+  const isSpaceExpanded = (spaceId: number, state = expandedSpaces) =>
+    state[spaceId] !== false;
+
   const [isSpaceModalOpen, setIsSpaceModalOpen] = useState(false);
   const [newSpaceName, setNewSpaceName] = useState('');
   const [newSpaceDescription, setNewSpaceDescription] = useState('');
@@ -361,7 +377,14 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
               <div key={space.id} className="mb-3">
                 {isOpen ? (
                   <div className="flex items-center justify-between px-3 mb-1 group/space">
-                    <span className="text-base font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider truncate flex-1 min-w-0" title={space.name}>{space.name}</span>
+                    <button
+                      onClick={() => toggleSpace(space.id)}
+                      className="flex items-center gap-1.5 flex-1 min-w-0 text-left"
+                      title={isSpaceExpanded(space.id) ? 'คลิกเพื่อซ่อน' : 'คลิกเพื่อแสดง'}
+                    >
+                      <ChevronRight className={`w-3.5 h-3.5 shrink-0 text-gray-400 dark:text-gray-500 transition-transform duration-200 ${isSpaceExpanded(space.id) ? 'rotate-90' : ''}`} />
+                      <span className="text-base font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider truncate">{space.name}</span>
+                    </button>
                     <div className="flex items-center gap-0.5 opacity-0 group-hover/space:opacity-100 transition-opacity shrink-0 ml-1">
                       {/* ↑↓ */}
                       <button onClick={() => handleMoveSpace(space.id, 'up')} disabled={spaceIdx === 0} title="เลื่อนขึ้น"
@@ -417,7 +440,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
                   </div>
                 )}
 
-                <div className="space-y-1">
+                {isSpaceExpanded(space.id) && <div className="space-y-1">
                   {/* Folders */}
                   {space.folders?.map((folder: any) => (
                     <div key={folder.id} className="mb-1">
@@ -503,7 +526,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
                       </Link>
                     );
                   })}
-                </div>
+                </div>}
               </div>
             ))}
           </div>
